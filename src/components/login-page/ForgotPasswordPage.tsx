@@ -4,7 +4,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
-
+import logo from '../../assets/01_logobachkhoasang.png';
 interface ForgotPasswordPageProps {
   onNavigateToLogin: () => void;
 }
@@ -82,8 +82,8 @@ export function ForgotPasswordPage({ onNavigateToLogin }: ForgotPasswordPageProp
         <div className="bg-white rounded-xl shadow-lg p-8">
           {/* Logo and Title */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-              <BookOpen className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center h-32 rounded-full mb-4">
+              <img src={logo} alt="Logo" className="h-32 mx-auto mb-4 rounded-full object-cover" />
             </div>
             <h1 className="text-primary mb-2">Quên mật khẩu</h1>
             <p className="text-muted-foreground">

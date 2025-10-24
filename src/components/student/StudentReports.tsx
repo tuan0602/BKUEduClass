@@ -127,7 +127,7 @@ export function StudentReports({ user }: StudentReportsProps) {
       {/* Charts */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Grade Distribution */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Phân bố điểm</CardTitle>
           </CardHeader>
@@ -160,7 +160,7 @@ export function StudentReports({ user }: StudentReportsProps) {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Performance by Course */}
         <Card>

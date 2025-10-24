@@ -94,7 +94,7 @@ export function DashboardLayout({ user, children, currentPage, onNavigate, onLog
           <div className="h-16 flex items-center justify-center border-b border-gray-200 px-4">
             <div className="flex items-center gap-2">
               <div className="h-24 rounded-lg flex items-center justify-center">
-                <img src={logo} alt="Logo" className="w-24" />
+                <img src={logo} alt="Logo" className="w-24 " />
               </div>
               <div>
                 <div className="text-primary">BK EduClass</div>

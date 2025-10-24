@@ -5,7 +5,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { BookOpen, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
-
+import logo from '../../assets/01_logobachkhoasang.png';
 interface RegisterPageProps {
   onRegister: (email: string, password: string, name: string, role: 'student' | 'teacher') => boolean;
   onNavigateToLogin: () => void;
@@ -60,11 +60,11 @@ export function RegisterPage({ onRegister, onNavigateToLogin }: RegisterPageProp
         <div className="bg-white rounded-xl shadow-lg p-8">
           {/* Logo and Title */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-              <BookOpen className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center h-32 rounded-full mb-4">
+              <img src={logo} alt="Logo" className="h-32 mx-auto mb-4 rounded-full object-cover" />
             </div>
             <h1 className="text-primary mb-2">Đăng ký tài khoản</h1>
-            <p className="text-muted-foreground">BK EduClass Management System</p>
+            <p className="text-muted-foreground">BK EduClass Hệ thống quản lý lớp học</p>
           </div>
 
           {/* Error/Success Alert */}

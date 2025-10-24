@@ -119,16 +119,6 @@ export function LoginPage({ onLogin, onNavigateToRegister, onNavigateToForgotPas
               </button>
             </p>
           </div>
-
-          {/* Demo Accounts */}
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-xs text-muted-foreground mb-2">Tài khoản demo:</p>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              <p>Admin: admin@bkedu.vn / admin123</p>
-              <p>Giảng viên: teacher1@bkedu.vn / teacher123</p>
-              <p>Sinh viên: student1@bkedu.vn / student123</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
