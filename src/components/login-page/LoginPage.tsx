@@ -5,6 +5,7 @@ import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { BookOpen, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
+import logo from '../../assets/01_logobachkhoasang.png';
 
 interface LoginPageProps {
   onLogin: (email: string, password: string) => boolean;
@@ -39,9 +40,7 @@ export function LoginPage({ onLogin, onNavigateToRegister, onNavigateToForgotPas
         <div className="bg-white rounded-xl shadow-lg p-8">
           {/* Logo and Title */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-              <BookOpen className="w-8 h-8 text-white" />
-            </div>
+            <img src={logo} alt="Logo" className="h-32 mx-auto mb-4 rounded-full object-cover" />
             <h1 className="text-primary mb-2">BK EduClass</h1>
             <p className="text-muted-foreground">Hệ thống quản lý lớp học</p>
           </div>

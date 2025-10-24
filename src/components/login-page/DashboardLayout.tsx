@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import logo from '../../assets/01_logobachkhoasang.png';
 import { User } from '../../lib/mockData';
 import { 
   BookOpen, 
@@ -92,8 +93,8 @@ export function DashboardLayout({ user, children, currentPage, onNavigate, onLog
           {/* Logo */}
           <div className="h-16 flex items-center justify-center border-b border-gray-200 px-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
+              <div className="h-24 rounded-lg flex items-center justify-center">
+                <img src={logo} alt="Logo" className="w-24" />
               </div>
               <div>
                 <div className="text-primary">BK EduClass</div>
