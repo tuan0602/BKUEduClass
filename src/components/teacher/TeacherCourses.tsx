@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { BookOpen, Plus, Search, Users, Edit, Trash2 } from 'lucide-react';
-import { DEMO_COURSES, User } from '../../lib/mockData';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { DEMO_COURSES, User, Course } from '../../lib/mockData';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { toast } from 'sonner';
+import { Progress } from '../ui/progress';
 
 interface TeacherCoursesProps {
   user: User;
@@ -16,6 +18,7 @@ interface TeacherCoursesProps {
 export function TeacherCourses({ user, onNavigate }: TeacherCoursesProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [courses, setCourses] = useState(DEMO_COURSES.filter(course => course.teacherId === user.id));
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -24,15 +27,30 @@ export function TeacherCourses({ user, onNavigate }: TeacherCoursesProps) {
     enrollmentCode: ''
   });
 
-  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.id);
-
-  const filteredCourses = myCourses.filter(course =>
+  const filteredCourses = courses.filter(course =>
     course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     course.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreateCourse = () => {
-    // Mock course creation
+    if (!formData.name || !formData.code) {
+      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    const newCourse: Course = {
+      id: `course-${Date.now()}`,
+      name: formData.name,
+      code: formData.code,
+      description: formData.description,
+      teacherId: user.id,
+      teacherName: user.name,
+      semester: formData.semester,
+      studentCount: 0,
+      enrollmentCode: formData.enrollmentCode || formData.code.toUpperCase()
+    };
+
+    setCourses([...courses, newCourse]);
     setCreateDialogOpen(false);
     setFormData({
       name: '',
@@ -41,6 +59,7 @@ export function TeacherCourses({ user, onNavigate }: TeacherCoursesProps) {
       semester: 'HK1 2024-2025',
       enrollmentCode: ''
     });
+    toast.success(`Đã tạo lớp học ${newCourse.name} thành công!`);
   };
 
   return (
@@ -115,14 +134,14 @@ export function TeacherCourses({ user, onNavigate }: TeacherCoursesProps) {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <DialogFooter>
               <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
                 Hủy
               </Button>
               <Button onClick={handleCreateCourse} className="bg-primary">
                 Tạo lớp học
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

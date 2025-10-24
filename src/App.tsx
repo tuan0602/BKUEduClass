@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './lib/authContext';
-import { LoginPage } from './components/LoginPage';
-import { RegisterPage } from './components/RegisterPage';
-import { ForgotPasswordPage } from './components/ForgotPasswordPage';
-import { DashboardLayout } from './components/DashboardLayout';
+import { LoginPage } from './components/login-page/LoginPage';
+import { RegisterPage } from './components/login-page/RegisterPage';
+import { ForgotPasswordPage } from './components/login-page/ForgotPasswordPage';
+import { DashboardLayout } from './components/login-page/DashboardLayout';
 import { StudentDashboard } from './components/student/StudentDashboard';
 import { StudentCourses } from './components/student/StudentCourses';
 import { CourseDetail } from './components/student/CourseDetail';
@@ -22,7 +22,7 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { UserManagement } from './components/admin/UserManagement';
 import { AdminCourses } from './components/admin/AdminCourses';
 import { AdminReports } from './components/admin/AdminReports';
-import { ProfilePage } from './components/ProfilePage';
+import { ProfilePage } from './components/login-page/ProfilePage';
 import { Toaster } from './components/ui/sonner';
 
 type AuthPage = 'login' | 'register' | 'forgot-password';

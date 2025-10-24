@@ -5,11 +5,13 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Search, Plus, Edit, Trash2, Users, Eye } from 'lucide-react';
-import { DEMO_ASSIGNMENTS, DEMO_COURSES, DEMO_SUBMISSIONS, User } from '../../lib/mockData';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { DEMO_ASSIGNMENTS, DEMO_COURSES, DEMO_SUBMISSIONS, User, Submission } from '../../lib/mockData';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 interface TeacherAssignmentsProps {
   user: User;
@@ -20,7 +22,10 @@ export function TeacherAssignments({ user, onNavigate }: TeacherAssignmentsProps
   const [searchQuery, setSearchQuery] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [gradeDialogOpen, setGradeDialogOpen] = useState(false);
+  const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [gradeData, setGradeData] = useState({ score: '', feedback: '' });
   const [formData, setFormData] = useState({
     courseId: '',
     title: '',
@@ -65,6 +70,28 @@ export function TeacherAssignments({ user, onNavigate }: TeacherAssignmentsProps
   const assignmentSubmissions = selectedAssignment 
     ? DEMO_SUBMISSIONS.filter(s => s.assignmentId === selectedAssignment)
     : [];
+
+  const handleOpenSubmission = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setSubmissionDialogOpen(true);
+  };
+
+  const handleGradeSubmission = () => {
+    if (selectedSubmission) {
+      const updatedSubmission = {
+        ...selectedSubmission,
+        score: parseFloat(gradeData.score),
+        feedback: gradeData.feedback,
+        status: 'graded'
+      };
+      // Mock update
+      setGradeDialogOpen(false);
+      setSubmissionDialogOpen(false);
+      setGradeData({ score: '', feedback: '' });
+      setSelectedSubmission(null);
+      setSelectedAssignment(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -147,14 +174,14 @@ export function TeacherAssignments({ user, onNavigate }: TeacherAssignmentsProps
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <DialogFooter>
               <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
                 Hủy
               </Button>
               <Button onClick={handleCreateAssignment} className="bg-primary">
                 Tạo bài tập
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -280,7 +307,7 @@ export function TeacherAssignments({ user, onNavigate }: TeacherAssignmentsProps
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleOpenSubmission(submission)}>
                         Chấm điểm
                       </Button>
                     </TableCell>
@@ -294,6 +321,49 @@ export function TeacherAssignments({ user, onNavigate }: TeacherAssignmentsProps
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Submission Dialog */}
+      <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Chấm điểm bài nộp</DialogTitle>
+            <DialogDescription>
+              Nhập điểm số và phản hồi cho bài nộp của sinh viên
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Điểm số</Label>
+                <Input
+                  type="number"
+                  placeholder="Nhập điểm số..."
+                  value={gradeData.score}
+                  onChange={(e) => setGradeData({ ...gradeData, score: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Phản hồi</Label>
+                <Textarea
+                  placeholder="Nhập phản hồi..."
+                  value={gradeData.feedback}
+                  onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
+                  rows={4}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSubmissionDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button onClick={handleGradeSubmission} className="bg-primary">
+              Chấm điểm
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

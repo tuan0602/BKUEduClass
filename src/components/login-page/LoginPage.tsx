@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Checkbox } from './ui/checkbox';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
 import { BookOpen, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from './ui/alert';
+import { Alert, AlertDescription } from '../ui/alert';
 
 interface LoginPageProps {
   onLogin: (email: string, password: string) => boolean;
@@ -85,7 +85,7 @@ export function LoginPage({ onLogin, onNavigateToRegister, onNavigateToForgotPas
                 <Checkbox
                   id="remember"
                   checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  onCheckedChange={(checked: boolean | "indeterminate") => setRememberMe(checked === true)}
                 />
                 <label
                   htmlFor="remember"

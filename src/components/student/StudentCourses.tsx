@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { BookOpen, Plus, Search, Users } from 'lucide-react';
-import { DEMO_COURSES, COURSE_ENROLLMENTS, User } from '../../lib/mockData';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { Label } from '../ui/label';
+import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
+import { BookOpen, Users, FileText, Plus, Search } from 'lucide-react';
+import { DEMO_COURSES, COURSE_ENROLLMENTS, User, Course } from '../../lib/mockData';
+import { Dialog, DialogContent, DialogDescription as DialogDesc, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
+import { Label } from '../ui/label';
+import { toast } from 'sonner';
 
 interface StudentCoursesProps {
   user: User;
@@ -15,26 +17,41 @@ interface StudentCoursesProps {
 
 export function StudentCourses({ user, onNavigate }: StudentCoursesProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [enrollCode, setEnrollCode] = useState('');
-  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
-
-  const myCourses = DEMO_COURSES.filter(course => 
-    COURSE_ENROLLMENTS[course.id]?.includes(user.id)
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [enrollmentCode, setEnrollmentCode] = useState('');
+  const [enrolledCourses, setEnrolledCourses] = useState(
+    DEMO_COURSES.filter(course => COURSE_ENROLLMENTS[course.id]?.includes(user.id))
   );
 
-  const filteredCourses = myCourses.filter(course =>
-    course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleEnroll = () => {
-    // Mock enrollment
-    if (enrollCode) {
-      setEnrollDialogOpen(false);
-      setEnrollCode('');
-      // In real app would add user to course
+  const handleJoinCourse = () => {
+    if (!enrollmentCode.trim()) {
+      toast.error('Vui lòng nhập mã đăng ký');
+      return;
     }
+
+    const course = DEMO_COURSES.find(c => c.enrollmentCode === enrollmentCode.toUpperCase());
+    
+    if (!course) {
+      toast.error('Mã đăng ký không hợp lệ');
+      return;
+    }
+
+    if (enrolledCourses.some(c => c.id === course.id)) {
+      toast.error('Bạn đã tham gia lớp học này rồi');
+      return;
+    }
+
+    setEnrolledCourses([...enrolledCourses, course]);
+    setJoinDialogOpen(false);
+    setEnrollmentCode('');
+    toast.success(`Đã tham gia lớp học ${course.name} thành công!`);
   };
+
+  const filteredCourses = enrolledCourses.filter(course =>
+    course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.teacherName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -45,7 +62,7 @@ export function StudentCourses({ user, onNavigate }: StudentCoursesProps) {
           <p className="text-muted-foreground">Quản lý các lớp học bạn đang tham gia</p>
         </div>
 
-        <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
+        <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
@@ -55,9 +72,9 @@ export function StudentCourses({ user, onNavigate }: StudentCoursesProps) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Đăng ký lớp học mới</DialogTitle>
-              <DialogDescription>
+              <DialogDesc>
                 Nhập mã lớp học để đăng ký tham gia
-              </DialogDescription>
+              </DialogDesc>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -65,22 +82,22 @@ export function StudentCourses({ user, onNavigate }: StudentCoursesProps) {
                 <Input
                   id="enrollCode"
                   placeholder="Ví dụ: WEB2024"
-                  value={enrollCode}
-                  onChange={(e) => setEnrollCode(e.target.value)}
+                  value={enrollmentCode}
+                  onChange={(e) => setEnrollmentCode(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
                   Mã demo: WEB2024, DB2024, AI2024
                 </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEnrollDialogOpen(false)}>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setJoinDialogOpen(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleEnroll} className="bg-primary">
+              <Button onClick={handleJoinCourse} className="bg-primary">
                 Đăng ký
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -151,7 +168,7 @@ export function StudentCourses({ user, onNavigate }: StudentCoursesProps) {
             {searchQuery ? 'Thử tìm kiếm với từ khóa khác' : 'Bạn chưa tham gia lớp học nào'}
           </p>
           {!searchQuery && (
-            <Button onClick={() => setEnrollDialogOpen(true)} className="bg-primary">
+            <Button onClick={() => setJoinDialogOpen(true)} className="bg-primary">
               <Plus className="w-4 h-4 mr-2" />
               Đăng ký lớp học
             </Button>

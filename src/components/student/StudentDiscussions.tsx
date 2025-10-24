@@ -78,7 +78,7 @@ export function StudentDiscussions({ user }: StudentDiscussionsProps) {
                 <Label>Lớp học</Label>
                 <Select
                   value={newDiscussion.courseId}
-                  onValueChange={(value) => setNewDiscussion({ ...newDiscussion, courseId: value })}
+                  onValueChange={(value: string) => setNewDiscussion({ ...newDiscussion, courseId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn lớp học" />

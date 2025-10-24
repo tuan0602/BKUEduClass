@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { User } from '../lib/mockData';
+import { User } from '../../lib/mockData';
 import { 
   BookOpen, 
   FileText, 
@@ -12,8 +12,8 @@ import {
   Bell,
   Menu
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Avatar, AvatarFallback } from './ui/avatar';
+import { Button } from '../ui/button';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +21,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import { Badge } from './ui/badge';
+} from '../ui/dropdown-menu';
+import { Badge } from '../ui/badge';
 import { useState } from 'react';
 
 interface DashboardLayoutProps {
