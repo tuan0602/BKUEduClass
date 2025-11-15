@@ -1,13 +1,15 @@
 package com.bk.eduClass.service.impl;
 
 import com.bk.eduClass.dto.ReplyDTO;
+import com.bk.eduClass.mapper.ReplyMapper;
 import com.bk.eduClass.model.Reply;
-import com.bk.eduClass.repository.ReplyRepository;
 import com.bk.eduClass.repository.DiscussionRepository;
+import com.bk.eduClass.repository.ReplyRepository;
 import com.bk.eduClass.repository.UserRepository;
 import com.bk.eduClass.service.ReplyService;
 
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,7 +31,7 @@ public class ReplyServiceImpl implements ReplyService {
     @Override
     public ReplyDTO getById(String replyId) {
         return replyRepository.findById(replyId)
-                .map(this::toDTO)
+                .map(ReplyMapper::toDTO)
                 .orElse(null);
     }
 
@@ -37,51 +39,51 @@ public class ReplyServiceImpl implements ReplyService {
     public List<ReplyDTO> getAll() {
         return replyRepository.findAll()
                 .stream()
-                .map(this::toDTO)
+                .map(ReplyMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public ReplyDTO create(ReplyDTO replyDTO) {
-        Reply reply = toEntity(replyDTO);
+    public ReplyDTO create(ReplyDTO dto) {
+        Reply reply = ReplyMapper.toEntity(dto);
+
+        if (reply.getDiscussion() != null && reply.getDiscussion().getDiscussionId() != null) {
+            discussionRepository.findById(reply.getDiscussion().getDiscussionId())
+                    .ifPresent(reply::setDiscussion);
+        }
+
+        if (reply.getAuthor() != null && reply.getAuthor().getUserId() != null) {
+            userRepository.findById(reply.getAuthor().getUserId())
+                    .ifPresent(reply::setAuthor);
+        }
+
         reply = replyRepository.save(reply);
-        return toDTO(reply);
+        return ReplyMapper.toDTO(reply);
     }
 
     @Override
-    public ReplyDTO update(String replyId, ReplyDTO replyDTO) {
-        Reply reply = replyRepository.findById(replyId).orElseThrow();
-        reply.setContent(replyDTO.getContent());
-        reply = replyRepository.save(reply);
-        return toDTO(reply);
+    public ReplyDTO update(String replyId, ReplyDTO dto) {
+        Reply existing = replyRepository.findById(replyId)
+                .orElseThrow(() -> new IllegalArgumentException("Reply not found"));
+
+        existing.setContent(dto.getContent());
+
+        if (dto.getDiscussionId() != null) {
+            discussionRepository.findById(dto.getDiscussionId())
+                    .ifPresent(existing::setDiscussion);
+        }
+
+        if (dto.getAuthorId() != null) {
+            userRepository.findById(dto.getAuthorId())
+                    .ifPresent(existing::setAuthor);
+        }
+
+        existing = replyRepository.save(existing);
+        return ReplyMapper.toDTO(existing);
     }
 
     @Override
     public void delete(String replyId) {
         replyRepository.deleteById(replyId);
-    }
-
-    private ReplyDTO toDTO(Reply reply) {
-        return ReplyDTO.builder()
-                .replyId(reply.getReplyId())
-                .discussionId(reply.getDiscussion().getDiscussionId())
-                .authorId(reply.getAuthor().getUserId())
-                .content(reply.getContent())
-                .createdAt(reply.getCreatedAt())
-                .build();
-    }
-
-    private Reply toEntity(ReplyDTO dto) {
-        Reply reply = new Reply();
-        reply.setReplyId(dto.getReplyId());
-        reply.setContent(dto.getContent());
-
-        discussionRepository.findById(dto.getDiscussionId())
-                .ifPresent(reply::setDiscussion);
-
-        userRepository.findById(dto.getAuthorId())
-                .ifPresent(reply::setAuthor);
-
-        return reply;
     }
 }

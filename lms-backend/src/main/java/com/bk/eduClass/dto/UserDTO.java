@@ -1,7 +1,6 @@
 package com.bk.eduClass.dto;
 
 import com.bk.eduClass.model.enums.Role;
-import com.bk.eduClass.model.User;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

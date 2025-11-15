@@ -1,7 +1,6 @@
 package com.bk.eduClass.model;
 
 import jakarta.persistence.*;
-import java.util.List;
 
 import lombok.Data;
 import lombok.Getter;
