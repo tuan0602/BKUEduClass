@@ -1,12 +1,12 @@
 package com.bk.eduClass.service.impl;
 
 import com.bk.eduClass.dto.DiscussionDTO;
+import com.bk.eduClass.mapper.DiscussionMapper;
 import com.bk.eduClass.model.Discussion;
 import com.bk.eduClass.repository.CourseRepository;
 import com.bk.eduClass.repository.DiscussionRepository;
 import com.bk.eduClass.repository.UserRepository;
 import com.bk.eduClass.service.DiscussionService;
-
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public class DiscussionServiceImpl implements DiscussionService {
     @Override
     public DiscussionDTO getById(String discussionId) {
         return discussionRepository.findById(discussionId)
-                .map(this::toDTO)
+                .map(DiscussionMapper::toDTO)
                 .orElse(null);
     }
 
@@ -38,59 +38,53 @@ public class DiscussionServiceImpl implements DiscussionService {
     public List<DiscussionDTO> getAll() {
         return discussionRepository.findAll()
                 .stream()
-                .map(this::toDTO)
+                .map(DiscussionMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public DiscussionDTO create(DiscussionDTO dto) {
-        Discussion discussion = toEntity(dto);
+        Discussion discussion = DiscussionMapper.toEntity(dto);
+
+        if (discussion.getCourse() != null && discussion.getCourse().getCourseId() != null) {
+            courseRepository.findById(discussion.getCourse().getCourseId())
+                    .ifPresent(discussion::setCourse);
+        }
+
+        if (discussion.getAuthor() != null && discussion.getAuthor().getUserId() != null) {
+            userRepository.findById(discussion.getAuthor().getUserId())
+                    .ifPresent(discussion::setAuthor);
+        }
+
         discussion = discussionRepository.save(discussion);
-        return toDTO(discussion);
+        return DiscussionMapper.toDTO(discussion);
     }
 
     @Override
     public DiscussionDTO update(String discussionId, DiscussionDTO dto) {
-        Discussion discussion = discussionRepository.findById(discussionId).orElseThrow();
-        discussion.setTitle(dto.getTitle());
-        discussion.setContent(dto.getContent());
-        discussion.setPinned(dto.isPinned());
-        discussion = discussionRepository.save(discussion);
-        return toDTO(discussion);
+        Discussion existing = discussionRepository.findById(discussionId)
+                .orElseThrow(() -> new IllegalArgumentException("Discussion not found"));
+
+        existing.setTitle(dto.getTitle());
+        existing.setContent(dto.getContent());
+        existing.setPinned(dto.isPinned());
+
+        if (dto.getCourseId() != null) {
+            courseRepository.findById(dto.getCourseId())
+                    .ifPresent(existing::setCourse);
+        }
+
+        if (dto.getAuthorId() != null) {
+            userRepository.findById(dto.getAuthorId())
+                    .ifPresent(existing::setAuthor);
+        }
+
+        existing = discussionRepository.save(existing);
+        return DiscussionMapper.toDTO(existing);
     }
 
     @Override
     public void delete(String discussionId) {
         discussionRepository.deleteById(discussionId);
-    }
-
-    private DiscussionDTO toDTO(Discussion discussion) {
-        return DiscussionDTO.builder()
-                .discussionId(discussion.getDiscussionId())
-                .courseId(discussion.getCourse().getCourseId())
-                .authorId(discussion.getAuthor().getUserId())
-                .title(discussion.getTitle())
-                .content(discussion.getContent())
-                .createdAt(discussion.getCreatedAt())
-                .pinned(discussion.getPinned())
-                .replyIds(discussion.getReplies() != null ?
-                          discussion.getReplies().stream()
-                                    .map(r -> r.getReplyId())
-                                    .collect(Collectors.toList()) : null)
-                .build();
-    }
-
-    private Discussion toEntity(DiscussionDTO dto) {
-        Discussion discussion = new Discussion();
-        discussion.setDiscussionId(dto.getDiscussionId());
-        discussion.setTitle(dto.getTitle());
-        discussion.setContent(dto.getContent());
-        discussion.setPinned(dto.isPinned());
-        discussion.setCreatedAt(dto.getCreatedAt());
-
-        courseRepository.findById(dto.getCourseId()).ifPresent(discussion::setCourse);
-        userRepository.findById(dto.getAuthorId()).ifPresent(discussion::setAuthor);
-
-        return discussion;
     }
 }

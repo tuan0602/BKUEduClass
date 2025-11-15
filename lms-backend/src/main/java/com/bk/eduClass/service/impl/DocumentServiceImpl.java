@@ -1,16 +1,16 @@
 package com.bk.eduClass.service.impl;
 
 import com.bk.eduClass.dto.DocumentDTO;
-import com.bk.eduClass.model.Course;
+import com.bk.eduClass.mapper.DocumentMapper;
 import com.bk.eduClass.model.Document;
 import com.bk.eduClass.repository.CourseRepository;
 import com.bk.eduClass.repository.DocumentRepository;
 import com.bk.eduClass.service.DocumentService;
-
 import org.springframework.stereotype.Service;
+
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class DocumentServiceImpl implements DocumentService {
@@ -27,7 +27,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public DocumentDTO getById(String documentId) {
         return documentRepository.findById(documentId)
-                .map(this::toDTO)
+                .map(DocumentMapper::toDTO)
                 .orElse(null);
     }
 
@@ -35,61 +35,47 @@ public class DocumentServiceImpl implements DocumentService {
     public List<DocumentDTO> getAll() {
         return documentRepository.findAll()
                 .stream()
-                .map(this::toDTO)
+                .map(DocumentMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public DocumentDTO create(DocumentDTO documentDTO) {
-        Document document = toEntity(documentDTO);
+        Document document = DocumentMapper.toEntity(documentDTO);
+
+        // Set full Course from DB if exists
+        if (document.getCourse() != null && document.getCourse().getCourseId() != null) {
+            courseRepository.findById(document.getCourse().getCourseId())
+                    .ifPresent(document::setCourse);
+        }
+
         Objects.requireNonNull(document, "Document entity is null");
         document = documentRepository.save(document);
-        return toDTO(document);
+        return DocumentMapper.toDTO(document);
     }
 
     @Override
     public DocumentDTO update(String documentId, DocumentDTO documentDTO) {
-        Document document = documentRepository.findById(documentId)
+        Document existing = documentRepository.findById(documentId)
                 .orElseThrow(() -> new IllegalArgumentException("Document not found"));
-        
-        document.setTitle(documentDTO.getTitle());
-        document.setType(documentDTO.getType());
-        document.setUrl(documentDTO.getUrl());
-        document.setUploadedAt(documentDTO.getUploadedAt());
-        document.setCategory(documentDTO.getCategory());
 
-        documentRepository.save(document);
-        return toDTO(document);
+        existing.setTitle(documentDTO.getTitle());
+        existing.setType(documentDTO.getType());
+        existing.setUrl(documentDTO.getUrl());
+        existing.setUploadedAt(documentDTO.getUploadedAt());
+        existing.setCategory(documentDTO.getCategory());
+
+        if (documentDTO.getCourseId() != null) {
+            courseRepository.findById(documentDTO.getCourseId())
+                    .ifPresent(existing::setCourse);
+        }
+
+        existing = documentRepository.save(existing);
+        return DocumentMapper.toDTO(existing);
     }
 
     @Override
     public void delete(String documentId) {
         documentRepository.deleteById(documentId);
-    }
-
-    private DocumentDTO toDTO(Document document) {
-        return DocumentDTO.builder()
-                .documentId(document.getDocumentId())
-                .courseId(document.getCourse().getCourseId())
-                .title(document.getTitle())
-                .type(document.getType())
-                .url(document.getUrl())
-                .uploadedAt(document.getUploadedAt())
-                .category(document.getCategory())
-                .build();
-    }
-
-    private Document toEntity(DocumentDTO dto) {
-        Document document = new Document();
-        document.setDocumentId(dto.getDocumentId());
-        document.setTitle(dto.getTitle());
-        document.setType(dto.getType());
-        document.setUrl(dto.getUrl());
-        document.setUploadedAt(dto.getUploadedAt());
-        document.setCategory(dto.getCategory());
-
-        courseRepository.findById(dto.getCourseId()).ifPresent(document::setCourse);
-
-        return document;
     }
 }
