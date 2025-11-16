@@ -3,8 +3,10 @@ package com.bk.eduClass.model;
 import com.bk.eduClass.model.enums.Role;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+
 @Entity
 @Table(name = "User")
 @Getter
@@ -12,30 +14,41 @@ import lombok.Setter;
 public class User {
 
     @Id
+    @Column(name = "userId", updatable = false, nullable = false, length = 36)
     private String userId;
 
-    @Column(unique = true, nullable = false, length = 100)
+    @Column(name = "email", unique = true, nullable = false, length = 100)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role", nullable = false)
     private Role role;
 
+    @Column(name = "avatar")
     private String avatar;
+    
+    @Column(name = "phone")
     private String phone;
 
-    @Column(columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Column(name = "isLocked")
     private Boolean locked = false;
 
-    @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "createdAt", updatable = false)
     private LocalDateTime createdAt;
 
-
-    // getters & setters
+    @PrePersist
+    protected void onCreate() {
+        if (userId == null) {
+            userId = UUID.randomUUID().toString();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }
