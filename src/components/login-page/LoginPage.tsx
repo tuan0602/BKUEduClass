@@ -2,33 +2,37 @@ import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Checkbox } from '../ui/checkbox';
-import { BookOpen, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
+import { AlertCircle } from 'lucide-react';
 import logo from '../../assets/01_logobachkhoasang.png';
+
 interface LoginPageProps {
-  onLogin: (email: string, password: string) => boolean;
+  onLogin: (email: string, password: string) => Promise<void>;
   onNavigateToRegister: () => void;
   onNavigateToForgotPassword: () => void;
 }
 
-export function LoginPage({ onLogin, onNavigateToRegister, onNavigateToForgotPassword }: LoginPageProps) {
+export function LoginPage({
+  onLogin,
+  onNavigateToRegister,
+  onNavigateToForgotPassword,
+}: LoginPageProps): JSX.Element {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!email || !password) {
       setError('Vui lòng nhập đầy đủ thông tin');
       return;
     }
 
-    const success = onLogin(email, password);
-    if (!success) {
+    try {
+      await onLogin(email, password);
+    } catch (err) {
       setError('Email hoặc mật khẩu không chính xác');
     }
   };
@@ -37,9 +41,13 @@ export function LoginPage({ onLogin, onNavigateToRegister, onNavigateToForgotPas
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-xl shadow-lg p-8">
-          {/* Logo and Title */}
+          {/* Logo */}
           <div className="text-center mb-8">
-            <img src={logo} alt="Logo" className="h-32 mx-auto mb-4 rounded-full object-cover" />
+            <img
+              src={logo}
+              alt="Logo"
+              className="h-32 mx-auto mb-4 rounded-full object-cover"
+            />
             <h1 className="text-primary mb-2">BK EduClass</h1>
             <p className="text-muted-foreground">Hệ thống quản lý lớp học</p>
           </div>
@@ -78,20 +86,7 @@ export function LoginPage({ onLogin, onNavigateToRegister, onNavigateToForgotPas
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                />
-                <label
-                  htmlFor="remember"
-                  className="text-sm cursor-pointer select-none"
-                >
-                  Ghi nhớ đăng nhập
-                </label>
-              </div>
+            <div className="flex justify-end">
               <button
                 type="button"
                 onClick={onNavigateToForgotPassword}
@@ -106,7 +101,7 @@ export function LoginPage({ onLogin, onNavigateToRegister, onNavigateToForgotPas
             </Button>
           </form>
 
-          {/* Register Link */}
+          {/* Link Register */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Chưa có tài khoản?{' '}
