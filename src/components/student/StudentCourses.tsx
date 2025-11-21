@@ -11,11 +11,10 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 
 interface StudentCoursesProps {
-  user: User;
   onNavigate: (page: string, data?: any) => void;
 }
 
-export function StudentCourses({ user, onNavigate }: StudentCoursesProps) {
+export function StudentCourses({ onNavigate }: StudentCoursesProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [enrollmentCode, setEnrollmentCode] = useState('');
