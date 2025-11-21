@@ -23,6 +23,17 @@ public class JwtFilter extends OncePerRequestFilter {
         this.jwtUtil = jwtUtil;
     }
 
+    // ✅ SỬA LẠI - Chỉ bỏ qua login/register/forgot-password/reset-password
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.equals("/api/auth/register") ||
+               path.equals("/api/auth/login") ||
+               path.equals("/api/auth/forgot-password") ||
+               path.equals("/api/auth/reset-password");
+        // ❌ KHÔNG bỏ qua /api/auth/me và các protected endpoints khác
+    }
+
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
@@ -45,4 +56,3 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

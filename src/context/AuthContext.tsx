@@ -1,67 +1,108 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import AuthService from "../services/auth.service";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import api from "../lib/axios"; 
+
+export interface User {
+  userId: string;
+  name: string;
+  email: string;
+  role: "ADMIN" | "TEACHER" | "STUDENT"; 
+  avatar?: string;
+  phone?: string;
+}
 
 interface AuthContextType {
-  user: any;
+  user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    role: "STUDENT" | "TEACHER"
+  ) => Promise<boolean>;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // load user khi reload trang
   useEffect(() => {
-    const init = async () => {
-      try {
-        const me = await AuthService.me();
-        setUser(me);
-      } catch {
-        setUser(null);
-      }
+    const token = localStorage.getItem("token");
+    if (!token) {
       setLoading(false);
-    };
-    init();
+      return;
+    }
+
+    // ✅ Bỏ Authorization header vì interceptor đã tự động thêm
+    api
+      .get("/auth/me")
+      .then((res) => setUser(res.data))
+      .catch((error) => {
+        console.error("Failed to fetch user:", error);
+        localStorage.removeItem("token");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const res = await AuthService.login({ email, password });
+const login = async (email: string, password: string) => {
+  try {
+    console.log("🔵 Login called:", email); // ✅ DEBUG
+    
+    const res = await api.post("/auth/login", { email, password });
+    console.log("🟢 Login response:", res.data); // ✅ DEBUG
+    
+    const { token, userId, name, email: userEmail, role } = res.data;
+    
+    localStorage.setItem("token", token);
+    setUser({ userId, name, email: userEmail, role });
+    
+    console.log("🟢 Login successful!"); // ✅ DEBUG
+    return true;
+  } catch (error) {
+    console.error("🔴 Login failed:", error);
+    return false;
+  }
+};
 
-    localStorage.setItem("access_token", res.accessToken);
-    localStorage.setItem("refresh_token", res.refreshToken);
-
-    const me = await AuthService.me();
-    setUser(me);
-  };
-
-  const register = async (data: any) => {
-    const res = await AuthService.register(data);
-
-    localStorage.setItem("access_token", res.accessToken);
-    localStorage.setItem("refresh_token", res.refreshToken);
-
-    const me = await AuthService.me();
-    setUser(me);
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    role: "STUDENT" | "TEACHER"
+  ) => {
+    try {
+      const res = await api.post("/auth/register", { name, email, password, role });
+      
+      // ✅ SỬA: Backend trả về flat object
+      const { token, userId, name: userName, email: userEmail, role: userRole } = res.data;
+      
+      localStorage.setItem("token", token);
+      setUser({ userId, name: userName, email: userEmail, role: userRole });
+      
+      return true;
+    } catch (error) {
+      console.error("Register failed:", error);
+      return false;
+    }
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem("token");
     setUser(null);
-    window.location.href = "/login";
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, loading, login, register, logout }}
-    >
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => useContext(AuthContext)!;
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+}
