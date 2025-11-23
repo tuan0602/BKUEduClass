@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { User } from '../../context/authContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { BookOpen, Plus, Search, Users, Edit, Trash2 } from 'lucide-react';
-import { DEMO_COURSES, User, Course } from '../../lib/mockData';
+import { DEMO_COURSES, Course } from '../../lib/mockData';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -13,16 +15,41 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface TeacherCoursesProps {
   user: User;
-  onNavigate: (page: string, data?: any) => void;
 }
 
-export function TeacherCourses({ user, onNavigate }: TeacherCoursesProps) {
+export function TeacherCourses({ user }: TeacherCoursesProps) {
+  const navigate = useNavigate();
+   // ✅ THÊM dummy courses để test
+  const [courses, setCourses] = useState([
+    {
+      id: '1',
+      name: 'Lập trình Web nâng cao',
+      code: 'IT4409',
+      description: 'Khóa học về phát triển ứng dụng web hiện đại',
+      teacherId: user.userId,
+      teacherName: user.name,
+      semester: 'HK1 2024-2025',
+      studentCount: 45,
+      enrollmentCode: 'WEB2024'
+    },
+    {
+      id: '2',
+      name: 'Cơ sở dữ liệu',
+      code: 'IT3080',
+      description: 'Thiết kế và quản lý cơ sở dữ liệu',
+      teacherId: user.userId,
+      teacherName: user.name,
+      semester: 'HK1 2024-2025',
+      studentCount: 38,
+      enrollmentCode: 'DB2024'
+    }
+  ]);
   const [searchQuery, setSearchQuery] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [courses, setCourses] = useState(DEMO_COURSES.filter(course => course.teacherId === user.id));
+  // const [courses, setCourses] = useState(DEMO_COURSES.filter(course => course.teacherId === user.userId));
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -47,7 +74,7 @@ export function TeacherCourses({ user, onNavigate }: TeacherCoursesProps) {
       name: formData.name,
       code: formData.code,
       description: formData.description,
-      teacherId: user.id,
+      teacherId: user.userId,
       teacherName: user.name,
       semester: formData.semester,
       studentCount: 0,
@@ -212,7 +239,7 @@ export function TeacherCourses({ user, onNavigate }: TeacherCoursesProps) {
               <div className="flex items-start justify-between">
                 <div 
                   className="flex-1 cursor-pointer"
-                  onClick={() => onNavigate('course-detail', { courseId: course.id })}
+                  onClick={() => navigate(`/teacher/courses/${course.id}`)}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">

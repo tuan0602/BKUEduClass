@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -7,11 +8,8 @@ import { BookOpen, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { useAuth } from '../../context/authContext';
 
-interface RegisterPageProps {
-  onNavigateToLogin: () => void;
-}
-
-export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
+export function RegisterPage() {
+  const navigate = useNavigate();
   const { register } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -23,6 +21,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +41,8 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
       return;
     }
 
+    setIsLoading(true);
+
     try {
       const result = await register(
         formData.name,
@@ -51,12 +52,15 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
       );
       if (result) {
         setSuccess(true);
-        setTimeout(() => onNavigateToLogin(), 1500);
+        setTimeout(() => navigate('/login'), 1500);
       } else {
         setError('Đăng ký thất bại. Vui lòng thử lại.');
       }
-    } catch {
+    } catch (err) {
+      console.error('Register error:', err);
       setError('Đã có lỗi xảy ra, vui lòng thử lại');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -94,6 +98,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="bg-input-background"
+                disabled={isLoading}
               />
             </div>
 
@@ -106,6 +111,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="bg-input-background"
+                disabled={isLoading}
               />
             </div>
 
@@ -118,6 +124,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="bg-input-background"
+                disabled={isLoading}
               />
             </div>
 
@@ -130,6 +137,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="bg-input-background"
+                disabled={isLoading}
               />
             </div>
 
@@ -138,6 +146,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
               <Select
                 value={formData.role}
                 onValueChange={(value: 'STUDENT' | 'TEACHER') => setFormData({ ...formData, role: value })}
+                disabled={isLoading}
               >
                 <SelectTrigger className="bg-input-background">
                   <SelectValue />
@@ -149,15 +158,23 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
               </Select>
             </div>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-              Đăng ký
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary/90"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Đã có tài khoản?{' '}
-              <button onClick={onNavigateToLogin} className="text-primary hover:underline">
+              <button 
+                onClick={() => navigate('/login')} 
+                className="text-primary hover:underline"
+                disabled={isLoading}
+              >
                 Đăng nhập ngay
               </button>
             </p>

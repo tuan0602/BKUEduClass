@@ -5,7 +5,7 @@ import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { Search, Plus, Lock, Unlock, Trash2, Edit } from 'lucide-react';
-import { DEMO_USERS, User } from '../../lib/mockData';
+import { DEMO_USERS, User as MockUser } from '../../lib/mockData';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -18,7 +18,7 @@ export function UserManagement() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [users, setUsers] = useState(DEMO_USERS.map(u => ({ ...u, isLocked: false })));
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<MockUser | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -115,7 +115,7 @@ export function UserManagement() {
     toast.success('Xóa người dùng thành công!');
   };
 
-  const openEditDialog = (user: User) => {
+  const openEditDialog = (user: MockUser) => {
     setSelectedUser(user);
     setFormData({
       name: user.name,
@@ -129,7 +129,7 @@ export function UserManagement() {
     setEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (user: User) => {
+  const openDeleteDialog = (user: MockUser) => {
     setSelectedUser(user);
     setDeleteDialogOpen(true);
   };

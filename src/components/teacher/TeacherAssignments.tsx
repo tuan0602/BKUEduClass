@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { User } from '../../context/authContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Search, Plus, Edit, Trash2, Users, Eye } from 'lucide-react';
-import { DEMO_ASSIGNMENTS, DEMO_COURSES, DEMO_SUBMISSIONS, User, Submission } from '../../lib/mockData';
+import { DEMO_ASSIGNMENTS, DEMO_COURSES, DEMO_SUBMISSIONS, Submission } from '../../lib/mockData';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -15,10 +16,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface TeacherAssignmentsProps {
   user: User;
-  onNavigate: (page: string, data?: any) => void;
 }
 
-export function TeacherAssignments({ user, onNavigate }: TeacherAssignmentsProps) {
+export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [gradeDialogOpen, setGradeDialogOpen] = useState(false);
@@ -34,7 +34,7 @@ export function TeacherAssignments({ user, onNavigate }: TeacherAssignmentsProps
     maxScore: '100'
   });
 
-  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.id);
+  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.userId);
   const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>
     myCourses.some(course => course.id === assignment.courseId)
   );

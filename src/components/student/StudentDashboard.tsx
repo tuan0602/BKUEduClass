@@ -1,63 +1,55 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { BookOpen, FileText, CheckCircle, Clock } from 'lucide-react';
-import { Progress } from '../ui/progress';
 import { User } from '../../context/authContext';
-
-interface Course {
-  id: string;
-  name: string;
-  code: string;
-  teacherName: string;
-}
-
-interface Assignment {
-  id: string;
-  title: string;
-  courseId: string;
-  courseName: string;
-  dueDate: string;
-  status: 'pending' | 'submitted' | 'graded' | 'overdue';
-}
+import { DEMO_COURSES, DEMO_ASSIGNMENTS, COURSE_ENROLLMENTS } from '../../lib/mockData';
+import { Progress } from '../ui/progress';
+import { useNavigate } from 'react-router-dom';
 
 interface StudentDashboardProps {
   user: User;
-  courses: Course[];          // các lớp học của sinh viên
-  assignments: Assignment[];  // các bài tập của sinh viên
-  onNavigate: (page: string, data?: any) => void;
 }
 
-export function StudentDashboard({ user, courses, assignments, onNavigate }: StudentDashboardProps) {
-  const pendingAssignments = assignments.filter(a => a.status === 'pending').length;
-  const completedAssignments = assignments.filter(a => a.status === 'submitted' || a.status === 'graded').length;
-  const overdueAssignments = assignments.filter(a => a.status === 'overdue').length;
+export function StudentDashboard({ user }: StudentDashboardProps) {
+  const navigate = useNavigate();
+  const id = user.userId;
+  const myCourses = DEMO_COURSES.filter(course => 
+    COURSE_ENROLLMENTS[course.id]?.includes(id)
+  );
 
-  const completionRate = assignments.length > 0
-    ? Math.round((completedAssignments / assignments.length) * 100)
+  const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>
+    myCourses.some(course => course.id === assignment.courseId)
+  );
+
+  const pendingAssignments = myAssignments.filter(a => a.status === 'pending').length;
+  const completedAssignments = myAssignments.filter(a => a.status === 'submitted' || a.status === 'graded').length;
+  const overdueAssignments = myAssignments.filter(a => a.status === 'overdue').length;
+  const completionRate = myAssignments.length > 0 
+    ? Math.round((completedAssignments / myAssignments.length) * 100) 
     : 0;
 
   return (
     <div className="space-y-6">
-      {/* Welcome */}
+      {/* Welcome Section */}
       <div>
         <h1>Xin chào, {user.name}!</h1>
         <p className="text-muted-foreground mt-1">Chào mừng bạn trở lại với BK EduClass</p>
       </div>
 
-      {/* Stats */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="flex items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Lớp học</CardTitle>
             <BookOpen className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{courses.length}</div>
+            <div className="text-primary">{myCourses.length}</div>
             <p className="text-xs text-muted-foreground mt-1">Đang tham gia</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Bài tập chờ</CardTitle>
             <Clock className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
@@ -68,7 +60,7 @@ export function StudentDashboard({ user, courses, assignments, onNavigate }: Stu
         </Card>
 
         <Card>
-          <CardHeader className="flex items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Đã hoàn thành</CardTitle>
             <CheckCircle className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
@@ -79,7 +71,7 @@ export function StudentDashboard({ user, courses, assignments, onNavigate }: Stu
         </Card>
 
         <Card>
-          <CardHeader className="flex items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Quá hạn</CardTitle>
             <FileText className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
@@ -90,18 +82,34 @@ export function StudentDashboard({ user, courses, assignments, onNavigate }: Stu
         </Card>
       </div>
 
-      {/* Progress */}
+      {/* Progress Section */}
       <Card>
         <CardHeader>
           <CardTitle>Tiến độ học tập</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex justify-between mb-2">
-              <span>Tỷ lệ hoàn thành bài tập</span>
-              <span className="text-primary">{completionRate}%</span>
+            <div>
+              <div className="flex justify-between mb-2">
+                <span>Tỷ lệ hoàn thành bài tập</span>
+                <span className="text-primary">{completionRate}%</span>
+              </div>
+              <Progress value={completionRate} className="h-2" />
             </div>
-            <Progress value={completionRate} className="h-2" />
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="text-primary">{completedAssignments}</div>
+                <div className="text-muted-foreground">Đã nộp</div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <div className="text-primary">{pendingAssignments}</div>
+                <div className="text-muted-foreground">Chưa nộp</div>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-lg">
+                <div className="text-primary">{overdueAssignments}</div>
+                <div className="text-muted-foreground">Quá hạn</div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -113,11 +121,11 @@ export function StudentDashboard({ user, courses, assignments, onNavigate }: Stu
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {courses.slice(0, 3).map(course => (
+            {myCourses.slice(0, 3).map(course => (
               <div
                 key={course.id}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                onClick={() => onNavigate('course-detail', { courseId: course.id })}
+                onClick={() => navigate(`/courses/${course.id}`)}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
@@ -131,9 +139,38 @@ export function StudentDashboard({ user, courses, assignments, onNavigate }: Stu
                 <div className="text-sm text-muted-foreground">{course.code}</div>
               </div>
             ))}
-            {courses.length === 0 && (
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Upcoming Assignments */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bài tập sắp đến hạn</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {myAssignments
+              .filter(a => a.status === 'pending')
+              .slice(0, 3)
+              .map(assignment => (
+                <div
+                  key={assignment.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                  onClick={() => navigate(`/assignments/${assignment.id}`)}
+                >
+                  <div className="flex-1">
+                    <div>{assignment.title}</div>
+                    <div className="text-sm text-muted-foreground">{assignment.courseName}</div>
+                  </div>
+                  <div className="text-sm text-orange-600">
+                    Hạn: {new Date(assignment.dueDate).toLocaleDateString('vi-VN')}
+                  </div>
+                </div>
+              ))}
+            {myAssignments.filter(a => a.status === 'pending').length === 0 && (
               <div className="text-center py-6 text-muted-foreground">
-                Bạn chưa tham gia lớp học nào
+                Không có bài tập nào sắp đến hạn
               </div>
             )}
           </div>

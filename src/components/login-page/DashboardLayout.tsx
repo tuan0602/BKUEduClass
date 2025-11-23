@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
-import { User } from '../../lib/mockData';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { User } from '../../context/authContext';
 import logo from '../../assets/01_logobachkhoasang.png';
 import { 
   BookOpen, 
@@ -23,51 +24,52 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { Badge } from '../ui/badge';
 import { useState } from 'react';
 
 interface DashboardLayoutProps {
   user: User;
   children: ReactNode;
-  currentPage: string;
-  onNavigate: (page: string) => void;
   onLogout: () => void;
 }
 
-export function DashboardLayout({ user, children, currentPage, onNavigate, onLogout }: DashboardLayoutProps) {
+export function DashboardLayout({ user, children, onLogout }: DashboardLayoutProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const getMenuItems = () => {
-    if (user.role === 'student') {
+    if (user.role === 'STUDENT') {
       return [
-        { id: 'dashboard', label: 'Tổng quan', icon: BarChart3 },
-        { id: 'courses', label: 'Lớp học của tôi', icon: BookOpen },
-        { id: 'assignments', label: 'Bài tập', icon: FileText },
-        { id: 'documents', label: 'Tài liệu', icon: FileText },
-        { id: 'discussions', label: 'Thảo luận', icon: MessageSquare },
-        { id: 'reports', label: 'Báo cáo học tập', icon: BarChart3 },
-        { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle }
+        { id: 'dashboard', label: 'Tổng quan', icon: BarChart3, path: '/dashboard' },
+        { id: 'courses', label: 'Lớp học của tôi', icon: BookOpen, path: '/courses' },
+        { id: 'assignments', label: 'Bài tập', icon: FileText, path: '/assignments' },
+        { id: 'documents', label: 'Tài liệu', icon: FileText, path: '/documents' },
+        { id: 'discussions', label: 'Thảo luận', icon: MessageSquare, path: '/discussions' },
+        { id: 'reports', label: 'Báo cáo học tập', icon: BarChart3, path: '/reports' },
+        { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle, path: '/profile' }
       ];
-    } else if (user.role === 'teacher') {
+    } else if (user.role === 'TEACHER') {
       return [
-        { id: 'dashboard', label: 'Tổng quan', icon: BarChart3 },
-        { id: 'courses', label: 'Quản lý lớp học', icon: BookOpen },
-        { id: 'assignments', label: 'Quản lý bài tập', icon: FileText },
-        { id: 'documents', label: 'Quản lý tài liệu', icon: FileText },
-        { id: 'students', label: 'Quản lý sinh viên', icon: Users },
-        { id: 'discussions', label: 'Thảo luận', icon: MessageSquare },
-        { id: 'reports', label: 'Thống kê lớp học', icon: BarChart3 },
-        { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle }
+        { id: 'dashboard', label: 'Tổng quan', icon: BarChart3, path: '/teacher/dashboard' },
+        { id: 'courses', label: 'Quản lý lớp học', icon: BookOpen, path: '/teacher/courses' },
+        { id: 'assignments', label: 'Quản lý bài tập', icon: FileText, path: '/teacher/assignments' },
+        { id: 'documents', label: 'Quản lý tài liệu', icon: FileText, path: '/teacher/documents' },
+        { id: 'students', label: 'Quản lý sinh viên', icon: Users, path: '/teacher/students' },
+        { id: 'discussions', label: 'Thảo luận', icon: MessageSquare, path: '/teacher/discussions' },
+        { id: 'reports', label: 'Thống kê lớp học', icon: BarChart3, path: '/teacher/reports' },
+        { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle, path: '/profile' }
       ];
-    } else {
+    } else if (user.role === 'ADMIN') {
       return [
-        { id: 'dashboard', label: 'Tổng quan', icon: BarChart3 },
-        { id: 'users', label: 'Quản lý người dùng', icon: Users },
-        { id: 'courses', label: 'Quản lý lớp học', icon: BookOpen },
-        { id: 'reports', label: 'Thống kê hệ thống', icon: BarChart3 },
-        { id: 'settings', label: 'Cài đặt', icon: Settings }
+        { id: 'dashboard', label: 'Tổng quan', icon: BarChart3, path: '/admin/dashboard' },
+        { id: 'users', label: 'Quản lý người dùng', icon: Users, path: '/admin/users' },
+        { id: 'courses', label: 'Quản lý lớp học', icon: BookOpen, path: '/admin/courses' },
+        { id: 'reports', label: 'Thống kê hệ thống', icon: BarChart3, path: '/admin/reports' },
+        { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle, path: '/profile' },
+        { id: 'settings', label: 'Cài đặt', icon: Settings, path: '/admin/settings' }
       ];
     }
+    return [];
   };
 
   const menuItems = getMenuItems();
@@ -78,11 +80,20 @@ export function DashboardLayout({ user, children, currentPage, onNavigate, onLog
 
   const getRoleLabel = (role: string) => {
     const labels: { [key: string]: string } = {
-      admin: 'Quản trị viên',
-      teacher: 'Giảng viên',
-      student: 'Sinh viên'
+      ADMIN: 'Quản trị viên',
+      TEACHER: 'Giảng viên',
+      STUDENT: 'Sinh viên'
     };
     return labels[role] || role;
+  };
+
+  // Kiểm tra active page dựa vào pathname
+  const isActive = (path: string) => location.pathname === path;
+
+  // Lấy label của trang hiện tại
+  const getCurrentPageLabel = () => {
+    const currentItem = menuItems.find(item => isActive(item.path));
+    return currentItem?.label || 'Dashboard';
   };
 
   return (
@@ -94,7 +105,7 @@ export function DashboardLayout({ user, children, currentPage, onNavigate, onLog
           <div className="h-16 flex items-center justify-center border-b border-gray-200 px-4">
             <div className="flex items-center">
               <div className="h-24 rounded-lg flex items-center justify-center">
-                <img src={logo} alt="Logo" className="w-24 " />
+                <img src={logo} alt="Logo" className="w-24" />
               </div>
               <div>
                 <div className="text-primary">BK EduClass</div>
@@ -106,14 +117,14 @@ export function DashboardLayout({ user, children, currentPage, onNavigate, onLog
           <nav className="flex-1 overflow-y-auto py-4">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentPage === item.id;
+              const active = isActive(item.path);
               
               return (
                 <button
                   key={item.id}
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => navigate(item.path)}
                   className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-                    isActive
+                    active
                       ? 'bg-blue-50 text-primary border-r-4 border-primary'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
@@ -162,9 +173,7 @@ export function DashboardLayout({ user, children, currentPage, onNavigate, onLog
             >
               <Menu className="w-5 h-5" />
             </Button>
-            <h2>
-              {menuItems.find(item => item.id === currentPage)?.label || 'Dashboard'}
-            </h2>
+            <h2>{getCurrentPageLabel()}</h2>
           </div>
 
           <div className="flex items-center gap-4">
@@ -192,11 +201,11 @@ export function DashboardLayout({ user, children, currentPage, onNavigate, onLog
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onNavigate('profile')}>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <UserCircle className="w-4 h-4 mr-2" />
                   Hồ sơ cá nhân
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onNavigate('settings')}>
+                <DropdownMenuItem onClick={() => navigate(user.role === 'ADMIN' ? '/admin/settings' : '/settings')}>
                   <Settings className="w-4 h-4 mr-2" />
                   Cài đặt
                 </DropdownMenuItem>

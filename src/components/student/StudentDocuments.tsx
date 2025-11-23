@@ -1,22 +1,24 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { User } from '../../context/authContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Search, Download, FileText, Video, Presentation, BookOpen } from 'lucide-react';
-import { DEMO_DOCUMENTS, DEMO_COURSES, COURSE_ENROLLMENTS, User } from '../../lib/mockData';
+import { DEMO_DOCUMENTS, DEMO_COURSES, COURSE_ENROLLMENTS } from '../../lib/mockData';
 import { toast } from 'sonner';
 
 interface StudentDocumentsProps {
   user: User;
-  onNavigate: (page: string, data?: any) => void;
 }
 
-export function StudentDocuments({ user, onNavigate }: StudentDocumentsProps) {
+export function StudentDocuments({ user }: StudentDocumentsProps) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
   const myCourses = DEMO_COURSES.filter(course => 
-    COURSE_ENROLLMENTS[course.id]?.includes(user.id)
+    COURSE_ENROLLMENTS[course.id]?.includes(user.userId)
   );
 
   const myDocuments = DEMO_DOCUMENTS.filter(doc =>
@@ -216,7 +218,7 @@ export function StudentDocuments({ user, onNavigate }: StudentDocumentsProps) {
                 <div key={course.id} className="border-b last:border-b-0 pb-4 last:pb-0">
                   <div 
                     className="flex items-center gap-2 mb-3 cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => onNavigate('course-detail', { courseId: course.id })}
+                    onClick={() => navigate(`/courses/${course.id}`)}
                   >
                     <BookOpen className="w-5 h-5" />
                     <h3>{course.name}</h3>

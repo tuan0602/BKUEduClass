@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { User } from '../../context/authContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -6,7 +7,7 @@ import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { MessageSquare, Pin, Send, Search } from 'lucide-react';
-import { DEMO_DISCUSSIONS, DEMO_COURSES, COURSE_ENROLLMENTS, User } from '../../lib/mockData';
+import { DEMO_DISCUSSIONS, DEMO_COURSES, COURSE_ENROLLMENTS } from '../../lib/mockData';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -28,7 +29,7 @@ export function StudentDiscussions({ user }: StudentDiscussionsProps) {
   });
 
   const myCourses = DEMO_COURSES.filter(course => 
-    COURSE_ENROLLMENTS[course.id]?.includes(user.id)
+    COURSE_ENROLLMENTS[course.id]?.includes(user.userId)
   );
 
   const myDiscussions = DEMO_DISCUSSIONS.filter(disc =>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -7,45 +8,47 @@ import { BookOpen, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { useAuth } from '../../context/authContext';
 
-interface LoginPageProps {
-  onNavigateToRegister: () => void;
-  onNavigateToForgotPassword: () => void;
-}
-
-export function LoginPage({ onNavigateToRegister, onNavigateToForgotPassword }: LoginPageProps) {
+export function LoginPage() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-
-  const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
- console.log("=== FORM SUBMITTED ==="); // ✅ THÊM
-  console.log("Email:", email);
-  console.log("Password:", password);
+    console.log("=== FORM SUBMITTED ===");
+    console.log("Email:", email);
+    console.log("Password:", password);
 
     if (!email || !password) {
       setError('Vui lòng nhập đầy đủ thông tin');
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      console.log("Calling login()..."); // ✅ THÊM
+      console.log("Calling login()...");
       const success = await login(email, password);
-      console.log("Login result:", success); // ✅ THÊM
+      console.log("Login result:", success);
+      
       if (!success) {
         setError('Email hoặc mật khẩu không chính xác');
       } else {
-      console.log("Login successful!"); // ✅ THÊM
-    }
-
-    } catch (er) {
-      console.error("Login error:", er); // ✅ THÊM
+        console.log("Login successful!");
+        // AuthContext sẽ tự động redirect đến dashboard
+      }
+    } catch (err) {
+      console.error("Login error:", err);
       setError('Đã có lỗi xảy ra, vui lòng thử lại');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -78,6 +81,7 @@ export function LoginPage({ onNavigateToRegister, onNavigateToForgotPassword }: 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-input-background"
+                disabled={isLoading}
               />
             </div>
 
@@ -90,6 +94,7 @@ export function LoginPage({ onNavigateToRegister, onNavigateToForgotPassword }: 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-input-background"
+                disabled={isLoading}
               />
             </div>
 
@@ -99,6 +104,7 @@ export function LoginPage({ onNavigateToRegister, onNavigateToForgotPassword }: 
                   id="remember"
                   checked={rememberMe}
                   onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  disabled={isLoading}
                 />
                 <label htmlFor="remember" className="text-sm cursor-pointer select-none">
                   Ghi nhớ đăng nhập
@@ -106,22 +112,31 @@ export function LoginPage({ onNavigateToRegister, onNavigateToForgotPassword }: 
               </div>
               <button
                 type="button"
-                onClick={onNavigateToForgotPassword}
+                onClick={() => navigate('/forgot-password')}
                 className="text-sm text-primary hover:underline"
+                disabled={isLoading}
               >
                 Quên mật khẩu?
               </button>
             </div>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-              Đăng nhập
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary/90"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Chưa có tài khoản?{' '}
-              <button onClick={onNavigateToRegister} className="text-primary hover:underline">
+              <button 
+                onClick={() => navigate('/register')} 
+                className="text-primary hover:underline"
+                disabled={isLoading}
+              >
                 Đăng ký ngay
               </button>
             </p>

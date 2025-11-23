@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -9,12 +10,13 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { toast } from 'sonner';
 import { Label } from '../ui/label';
 
-interface AssignmentDetailProps {
-  assignmentId: string;
-  onNavigate: (page: string, data?: any) => void;
-}
 
-export function AssignmentDetail({ assignmentId, onNavigate }: AssignmentDetailProps) {
+export function AssignmentDetail() {
+  const navigate = useNavigate();
+  const { assignmentId } = useParams<{ assignmentId: string }>();
+  if (!assignmentId) {
+  return <div>Không tìm thấy bài tập</div>;
+}
   const assignment = DEMO_ASSIGNMENTS.find(a => a.id === assignmentId);
   const [submissionText, setSubmissionText] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -66,7 +68,7 @@ export function AssignmentDetail({ assignmentId, onNavigate }: AssignmentDetailP
     setSubmitted(true);
     toast.success('Nộp bài thành công!');
     setTimeout(() => {
-      onNavigate('assignments');
+      navigate('/assignments');
     }, 1500);
   };
 
@@ -76,7 +78,7 @@ export function AssignmentDetail({ assignmentId, onNavigate }: AssignmentDetailP
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Button variant="ghost" onClick={() => onNavigate('assignments')} className="mb-4">
+        <Button variant="ghost" onClick={() => navigate('/assignments')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại danh sách bài tập
         </Button>
@@ -245,7 +247,7 @@ export function AssignmentDetail({ assignmentId, onNavigate }: AssignmentDetailP
               >
                 {isOverdue ? 'Đã quá hạn' : 'Nộp bài'}
               </Button>
-              <Button variant="outline" onClick={() => onNavigate('assignments')}>
+              <Button variant="outline" onClick={() => navigate('/assignments')}>
                 Hủy
               </Button>
             </div>

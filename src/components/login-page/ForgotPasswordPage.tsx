@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -5,11 +6,10 @@ import { Label } from '../ui/label';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 
-interface ForgotPasswordPageProps {
-  onNavigateToLogin: () => void;
-}
 
-export function ForgotPasswordPage({ onNavigateToLogin }: ForgotPasswordPageProps) {
+export function ForgotPasswordPage() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'email' | 'code' | 'reset'>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -72,7 +72,7 @@ export function ForgotPasswordPage({ onNavigateToLogin }: ForgotPasswordPageProp
     // Mock password reset
     setMessage('Đặt lại mật khẩu thành công!');
     setTimeout(() => {
-      onNavigateToLogin();
+      navigate('/login');  // ✅ Thay vì onNavigateToLogin()
     }, 1500);
   };
 
@@ -186,7 +186,7 @@ export function ForgotPasswordPage({ onNavigateToLogin }: ForgotPasswordPageProp
           {/* Back to Login */}
           <div className="mt-6 text-center">
             <button
-              onClick={onNavigateToLogin}
+              onClick={() => navigate('/login')}
               className="text-sm text-primary hover:underline inline-flex items-center gap-1"
             >
               <ArrowLeft className="w-4 h-4" />
