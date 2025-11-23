@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { User, DEMO_COURSES, DEMO_ASSIGNMENTS, COURSE_ENROLLMENTS } from '../../lib/mockData';
+import { User } from '../../context/authContext';
+import { DEMO_COURSES, DEMO_ASSIGNMENTS, COURSE_ENROLLMENTS } from '../../lib/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { TrendingUp, Award, BookOpen, CheckCircle } from 'lucide-react';
 import { Progress } from '../ui/progress';
@@ -10,7 +11,7 @@ interface StudentReportsProps {
 
 export function StudentReports({ user }: StudentReportsProps) {
   const myCourses = DEMO_COURSES.filter(course => 
-    COURSE_ENROLLMENTS[course.id]?.includes(user.id)
+    COURSE_ENROLLMENTS[course.id]?.includes(user.userId)
   );
 
   const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>

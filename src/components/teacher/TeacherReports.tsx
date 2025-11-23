@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { User, DEMO_COURSES, DEMO_ASSIGNMENTS, COURSE_ENROLLMENTS } from '../../lib/mockData';
+import { User } from '../../context/authContext';
+import { DEMO_COURSES, DEMO_ASSIGNMENTS, COURSE_ENROLLMENTS } from '../../lib/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { BookOpen, Users, FileText, TrendingUp } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -13,7 +14,7 @@ interface TeacherReportsProps {
 export function TeacherReports({ user }: TeacherReportsProps) {
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
 
-  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.id);
+  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.userId);
   const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>
     myCourses.some(course => course.id === assignment.courseId)
   );

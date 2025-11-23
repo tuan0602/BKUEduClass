@@ -1,3 +1,4 @@
+import { User } from '../../context/authContext';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
@@ -5,21 +6,23 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
 import { BookOpen, Users, FileText, Plus, Search } from 'lucide-react';
-import { DEMO_COURSES, COURSE_ENROLLMENTS, User, Course } from '../../lib/mockData';
+import { DEMO_COURSES, COURSE_ENROLLMENTS, Course } from '../../lib/mockData';
 import { Dialog, DialogContent, DialogDescription as DialogDesc, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface StudentCoursesProps {
-  onNavigate: (page: string, data?: any) => void;
+  user: User;
 }
 
-export function StudentCourses({ onNavigate }: StudentCoursesProps) {
+export function StudentCourses({ user  }: StudentCoursesProps) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [enrollmentCode, setEnrollmentCode] = useState('');
   const [enrolledCourses, setEnrolledCourses] = useState(
-    DEMO_COURSES.filter(course => COURSE_ENROLLMENTS[course.id]?.includes(user.id))
+    DEMO_COURSES.filter(course => COURSE_ENROLLMENTS[course.id]?.includes(user.userId))
   );
 
   const handleJoinCourse = () => {
@@ -121,7 +124,7 @@ export function StudentCourses({ onNavigate }: StudentCoursesProps) {
             <Card
               key={course.id}
               className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => onNavigate('course-detail', { courseId: course.id })}
+              onClick={() => navigate(`/courses/${course.id}`)}
             >
               <div className="h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-t-lg relative overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center">

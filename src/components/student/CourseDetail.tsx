@@ -4,13 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { ArrowLeft, BookOpen, FileText, MessageSquare, Users, Download } from 'lucide-react';
 import { DEMO_COURSES, DEMO_ASSIGNMENTS, DEMO_DOCUMENTS, DEMO_DISCUSSIONS, COURSE_ENROLLMENTS, DEMO_USERS } from '../../lib/mockData';
 import { Badge } from '../ui/badge';
+import { useNavigate, useParams } from 'react-router-dom';
 
-interface CourseDetailProps {
-  courseId: string;
-  onNavigate: (page: string, data?: any) => void;
-}
-
-export function CourseDetail({ courseId, onNavigate }: CourseDetailProps) {
+export function CourseDetail() {
+  const navigate = useNavigate();
+  const { courseId } = useParams<{ courseId: string }>();
+  if (!courseId) {
+  return <div>Không tìm thấy lớp học</div>;
+  }
   const course = DEMO_COURSES.find(c => c.id === courseId);
   const assignments = DEMO_ASSIGNMENTS.filter(a => a.courseId === courseId);
   const documents = DEMO_DOCUMENTS.filter(d => d.courseId === courseId);
@@ -36,7 +37,7 @@ export function CourseDetail({ courseId, onNavigate }: CourseDetailProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Button variant="ghost" onClick={() => onNavigate('courses')} className="mb-4">
+        <Button variant="ghost" onClick={() => navigate('/courses')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại danh sách lớp
         </Button>
@@ -150,7 +151,7 @@ export function CourseDetail({ courseId, onNavigate }: CourseDetailProps) {
                     <div
                       key={assignment.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                      onClick={() => onNavigate('assignment-detail', { assignmentId: assignment.id })}
+                      onClick={() => navigate(`/assignments/${assignment.id}`)}
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">

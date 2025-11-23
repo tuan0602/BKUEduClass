@@ -1,28 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Search, Calendar, Award, BookOpen } from 'lucide-react';
-import { DEMO_ASSIGNMENTS, DEMO_COURSES, COURSE_ENROLLMENTS, User } from '../../lib/mockData';
+import { Search, Calendar, Award, BookOpen, Loader2 } from 'lucide-react';
+import { User } from '../../context/authContext';
+import api from '../../lib/axios';
 
 interface StudentAssignmentsProps {
   user: User;
-  onNavigate: (page: string, data?: any) => void;
 }
 
-export function StudentAssignments({ user, onNavigate }: StudentAssignmentsProps) {
+interface Assignment {
+  assignmentId: string; 
+  title: string;
+  courseId: string;
+  courseName: string;
+  dueDate: string;
+  status: 'pending' | 'submitted' | 'graded' | 'overdue';
+  maxScore: number;
+  score?: number;
+  description?: string;
+}
+
+export function StudentAssignments({ user }: StudentAssignmentsProps) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const myCourses = DEMO_COURSES.filter(course => 
-    COURSE_ENROLLMENTS[course.id]?.includes(user.id)
-  );
+  // ✅ Fetch assignments từ API
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const res = await api.get<Assignment[]>(`/students/${user.userId}/assignments`);
+        setAssignments(res.data);
+      } catch (error) {
+        console.error('Failed to fetch assignments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>
-    myCourses.some(course => course.id === assignment.courseId)
-  );
+    fetchAssignments();
+  }, [user.userId]);
 
-  const filteredAssignments = myAssignments.filter(assignment =>
+  const filteredAssignments = assignments.filter(assignment =>
     assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     assignment.courseName.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -42,21 +66,21 @@ export function StudentAssignments({ user, onNavigate }: StudentAssignmentsProps
     return variants[status] || variants.pending;
   };
 
-  const renderAssignmentCard = (assignment: typeof DEMO_ASSIGNMENTS[0]) => {
+  const renderAssignmentCard = (assignment: Assignment) => {
     const statusInfo = getStatusInfo(assignment.status);
     const dueDate = new Date(assignment.dueDate);
 
     return (
       <Card 
-        key={assignment.id}
+        key={assignment.assignmentId} 
         className="cursor-pointer hover:shadow-lg transition-shadow"
-        onClick={() => onNavigate('assignment-detail', { assignmentId: assignment.id })}
+        onClick={() => navigate(`/assignments/${assignment.assignmentId}`)}
       >
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3>{assignment.title}</h3>
+                <h3 className="font-semibold">{assignment.title}</h3>
                 <Badge variant={statusInfo.variant as any}>{statusInfo.label}</Badge>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -76,15 +100,34 @@ export function StudentAssignments({ user, onNavigate }: StudentAssignmentsProps
               <span>{assignment.maxScore} điểm</span>
             </div>
           </div>
+
+          {assignment.status === 'graded' && assignment.score !== undefined && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Điểm số:</span>
+                <span className="font-semibold text-green-600">
+                  {assignment.score}/{assignment.maxScore}
+                </span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h1>Bài tập của tôi</h1>
+        <h1 className="text-2xl font-bold">Bài tập của tôi</h1>
         <p className="text-muted-foreground">Quản lý và theo dõi các bài tập</p>
       </div>
 
@@ -103,34 +146,34 @@ export function StudentAssignments({ user, onNavigate }: StudentAssignmentsProps
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Chưa nộp</CardTitle>
+            <CardTitle className="text-sm font-medium">Chưa nộp</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{pendingAssignments.length}</div>
+            <div className="text-2xl font-bold text-primary">{pendingAssignments.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Đã nộp</CardTitle>
+            <CardTitle className="text-sm font-medium">Đã nộp</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{submittedAssignments.length}</div>
+            <div className="text-2xl font-bold text-primary">{submittedAssignments.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Đã chấm</CardTitle>
+            <CardTitle className="text-sm font-medium">Đã chấm</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{gradedAssignments.length}</div>
+            <div className="text-2xl font-bold text-primary">{gradedAssignments.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Quá hạn</CardTitle>
+            <CardTitle className="text-sm font-medium">Quá hạn</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{overdueAssignments.length}</div>
+            <div className="text-2xl font-bold text-primary">{overdueAssignments.length}</div>
           </CardContent>
         </Card>
       </div>

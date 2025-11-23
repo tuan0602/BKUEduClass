@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { User } from '../../context/authContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { Search, UserCheck, UserX, Eye } from 'lucide-react';
-import { DEMO_USERS, DEMO_COURSES, COURSE_ENROLLMENTS, User, DEMO_SUBMISSIONS } from '../../lib/mockData';
+import { DEMO_USERS, DEMO_COURSES, COURSE_ENROLLMENTS, DEMO_SUBMISSIONS } from '../../lib/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 
@@ -17,9 +18,9 @@ export function TeacherStudents({ user }: TeacherStudentsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
+    const [selectedStudent, setSelectedStudent] = useState<typeof DEMO_USERS[0] | null>(null);
 
-  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.id);
+  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.userId);
   
   // Get all unique students from all my courses
   const allStudentIds = Array.from(new Set(
@@ -42,7 +43,7 @@ export function TeacherStudents({ user }: TeacherStudentsProps) {
     student.studentId?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleViewDetail = (student: User) => {
+  const handleViewDetail = (student: typeof DEMO_USERS[0]) => {
     setSelectedStudent(student);
     setDetailDialogOpen(true);
   };

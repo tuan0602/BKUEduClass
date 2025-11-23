@@ -1,13 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { useNavigate } from 'react-router-dom';
 import { Users, BookOpen, FileText, Activity } from 'lucide-react';
 import { DEMO_USERS, DEMO_COURSES, DEMO_ASSIGNMENTS } from '../../lib/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
-interface AdminDashboardProps {
-  onNavigate: (page: string, data?: any) => void;
-}
 
-export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
+export function AdminDashboard() {
+  const navigate = useNavigate();
   const totalUsers = DEMO_USERS.length;
   const students = DEMO_USERS.filter(u => u.role === 'student').length;
   const teachers = DEMO_USERS.filter(u => u.role === 'teacher').length;

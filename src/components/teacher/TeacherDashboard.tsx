@@ -1,15 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { BookOpen, FileText, Users, CheckCircle } from 'lucide-react';
-import { DEMO_COURSES, DEMO_ASSIGNMENTS, DEMO_SUBMISSIONS, User } from '../../lib/mockData';
+import { useNavigate } from 'react-router-dom';
+import { User } from '../../context/authContext';
+import { DEMO_COURSES, DEMO_ASSIGNMENTS, DEMO_SUBMISSIONS } from '../../lib/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface TeacherDashboardProps {
   user: User;
-  onNavigate: (page: string, data?: any) => void;
 }
 
-export function TeacherDashboard({ user, onNavigate }: TeacherDashboardProps) {
-  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.id);
+export function TeacherDashboard({ user }: TeacherDashboardProps) {
+  const navigate = useNavigate();
+  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.userId);
   const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>
     myCourses.some(course => course.id === assignment.courseId)
   );
@@ -142,7 +144,7 @@ export function TeacherDashboard({ user, onNavigate }: TeacherDashboardProps) {
               <div
                 key={course.id}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                onClick={() => onNavigate('course-detail', { courseId: course.id })}
+                onClick={() => navigate(`/teacher/courses/${course.id}`)}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
