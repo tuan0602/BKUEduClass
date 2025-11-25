@@ -30,18 +30,25 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // THÊM DÒNG NÀY
-            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) 
+            .csrf(csrf -> csrf.disable())  // TẠM THỜI TẮT CSRF ĐỂ TEST API
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                // Auth endpoints (public)
                 .requestMatchers(
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/forgot-password",
                     "/api/auth/reset-password"
                 ).permitAll()
+                
+                // ===== AUTH CHO USER MANAGEMENT  =====
+                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                // ============================================================
+                
+                // Các endpoints còn lại cần authentication
                 .requestMatchers("/api/auth/me").authenticated()
                 .anyRequest().authenticated()
             );
@@ -51,7 +58,6 @@ public class WebSecurityConfig {
         return http.build();
     }
 
-    // THÊM BEAN NÀY
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

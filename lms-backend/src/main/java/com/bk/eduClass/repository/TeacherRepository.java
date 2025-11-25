@@ -2,10 +2,16 @@ package com.bk.eduClass.repository;
 
 import com.bk.eduClass.model.Teacher;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.Optional;
-import java.util.List;
+import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
+@Repository
 public interface TeacherRepository extends JpaRepository<Teacher, String> {
-    Optional<Teacher> findByUserUserId(String userId);
-    List<Teacher> findByDepartment(String department);
+    
+    // Tìm teacher theo userId
+    Optional<Teacher> findByUser_UserId(String userId);
+    
+    // Xóa teacher theo userId
+    void deleteByUser_UserId(String userId);
 }

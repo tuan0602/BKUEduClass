@@ -1,4 +1,4 @@
-package com.bk.eduClass.dto;
+package com.bk.eduClass.dto.request;
 
 public class LoginRequestDTO {
     private String email;

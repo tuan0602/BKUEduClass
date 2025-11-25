@@ -8,6 +8,8 @@ export interface User {
   role: "ADMIN" | "TEACHER" | "STUDENT"; 
   avatar?: string;
   phone?: string;
+  studentId?: string;   // ✅ THÊM
+  teacherId?: string;
 }
 
 interface AuthContextType {

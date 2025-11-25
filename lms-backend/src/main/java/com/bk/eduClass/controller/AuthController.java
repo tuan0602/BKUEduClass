@@ -1,6 +1,11 @@
 package com.bk.eduClass.controller;
 
 import com.bk.eduClass.dto.*;
+import com.bk.eduClass.dto.request.ForgotPasswordRequestDTO;
+import com.bk.eduClass.dto.request.LoginRequestDTO;
+import com.bk.eduClass.dto.request.RegisterRequestDTO;
+import com.bk.eduClass.dto.request.ResetPasswordRequestDTO;
+import com.bk.eduClass.dto.response.AuthResponseDTO;
 import com.bk.eduClass.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;

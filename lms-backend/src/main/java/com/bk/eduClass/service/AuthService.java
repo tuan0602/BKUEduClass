@@ -1,6 +1,11 @@
 package com.bk.eduClass.service;
 
 import com.bk.eduClass.dto.*;
+import com.bk.eduClass.dto.request.ForgotPasswordRequestDTO;
+import com.bk.eduClass.dto.request.LoginRequestDTO;
+import com.bk.eduClass.dto.request.RegisterRequestDTO;
+import com.bk.eduClass.dto.request.ResetPasswordRequestDTO;
+import com.bk.eduClass.dto.response.AuthResponseDTO;
 import com.bk.eduClass.model.User;
 import com.bk.eduClass.model.enums.Role;
 import com.bk.eduClass.repository.UserRepository;
