@@ -10,6 +10,22 @@ import org.springframework.web.bind.annotation.*;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // ==========XỬ LÝ CHO USER MANAGEMENT ==========
+    
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<String> handleResourceNotFound(ResourceNotFoundException ex) {
+        ex.printStackTrace();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Not Found: " + ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<String> handleDuplicateResource(DuplicateResourceException ex) {
+        ex.printStackTrace();
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body("Duplicate: " + ex.getMessage());
+    }
+
     // Bắt lỗi khi JSON không parse được (ví dụ enum sai, JSON sai cú pháp)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<String> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {

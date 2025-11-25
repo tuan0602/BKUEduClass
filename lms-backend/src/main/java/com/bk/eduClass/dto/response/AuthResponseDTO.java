@@ -1,4 +1,4 @@
-package com.bk.eduClass.dto;
+package com.bk.eduClass.dto.response;
 
 import com.bk.eduClass.model.enums.Role;
 

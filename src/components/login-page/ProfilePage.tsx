@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
+import { User } from '../../context/authContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { User } from '../../lib/mockData';
+import {  } from '../../lib/mockData';
 import { Camera, Save } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from 'sonner';
@@ -273,7 +274,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
       </div>
 
       {/* Additional Stats */}
-      {user.role === 'student' && (
+      {user.role === 'STUDENT' && (
         <Card>
           <CardHeader>
             <CardTitle>Thống kê học tập</CardTitle>
@@ -301,7 +302,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
         </Card>
       )}
 
-      {user.role === 'teacher' && (
+      {user.role === 'TEACHER' && (
         <Card>
           <CardHeader>
             <CardTitle>Thống kê giảng dạy</CardTitle>

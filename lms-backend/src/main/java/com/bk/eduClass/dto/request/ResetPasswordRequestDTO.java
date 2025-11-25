@@ -1,4 +1,4 @@
-package com.bk.eduClass.dto;
+package com.bk.eduClass.dto.request;
 
 public class ResetPasswordRequestDTO {
     private String token;      // token gửi từ email
