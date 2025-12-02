@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 public class RequestLoginDTO {
     @NotBlank(message = "Khong duoc de trong username")
-    public String username;
+    public String email;
     @NotBlank(message = "Khong duoc de trong password")
     public String password;
 }
