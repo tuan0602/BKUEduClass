@@ -29,7 +29,7 @@ public class RegisterRequestDTO {
     private String name;
 
     @NotBlank(message = "Role must not be blank")
-    @Pattern(regexp = "USER|ADMIN|TEACHER", message = "Role must be USER or ADMIN or Teacher")
+    @Pattern(regexp = "STUDENT|ADMIN|TEACHER", message = "Role must be STUDENT or Teacher")
     private String role;
 
     public User createDTOToUser(){
