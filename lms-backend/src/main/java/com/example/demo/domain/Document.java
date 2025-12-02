@@ -1,39 +1,63 @@
 package com.example.demo.domain;
 
-import com.example.demo.domain.enumeration.Type;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.example.demo.domain.Course;
+import com.example.demo.domain.User;
 
 import java.time.LocalDateTime;
-    
+
 @Entity
 @Table(name = "Document")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Document {
 
     @Id
-    private String documentId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "courseId", nullable = false)
+    @Column(name = "courseId", nullable = false)
+    private Long courseId;
+
+    @Column(name = "uploadedBy", nullable = false)
+    private String uploadedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "courseId", insertable = false, updatable = false)
     private Course course;
 
-    @Column(nullable = false, length = 100)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uploadedBy", insertable = false, updatable = false)
+    private User uploader;
+
+    @NotBlank
+    @Column(name = "title", nullable = false, length = 200)
     private String title;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Type type;
+    @Column(name = "fileUrl", columnDefinition = "TEXT", nullable = false)
+    private String fileUrl;
 
-    private String url;
+    @Column(name = "createdAt", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    @Column(columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime uploadedAt;
+    @Column(name = "updatedAt")
+    private LocalDateTime updatedAt;
 
-    private String category;
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        updatedAt = LocalDateTime.now();
+    }
 
-
-    // getters & setters
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

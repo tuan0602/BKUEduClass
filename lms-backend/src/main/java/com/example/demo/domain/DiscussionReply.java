@@ -5,46 +5,39 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.example.demo.domain.Course;
+import com.example.demo.domain.Discussion;
 import com.example.demo.domain.User;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Discussion")
+@Table(name = "DiscussionReply")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Discussion {
+public class DiscussionReply {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "courseId", nullable = false)
-    private Long courseId;
+    @Column(name = "discussionId", nullable = false)
+    private Long discussionId;
 
     @Column(name = "createdBy", nullable = false)
     private String createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "courseId", insertable = false, updatable = false)
-    private Course course;
+    @JoinColumn(name = "discussionId", insertable = false, updatable = false)
+    private Discussion discussion;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "createdBy", insertable = false, updatable = false)
     private User creator;
 
     @NotBlank
-    @Column(name = "title", nullable = false, length = 200)
-    private String title;
-
-    @NotBlank
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
-
-    @Column(name = "isPinned")
-    private Boolean isPinned = false;
 
     @Column(name = "createdAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -58,9 +51,6 @@ public class Discussion {
             createdAt = LocalDateTime.now();
         }
         updatedAt = LocalDateTime.now();
-        if (isPinned == null) {
-            isPinned = false;
-        }
     }
 
     @PreUpdate
