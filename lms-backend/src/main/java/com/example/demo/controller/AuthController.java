@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.User;
+import com.example.demo.dto.response.userDTO.ResUserDTO;
 import com.example.demo.service.AuthService;
 // import com.example.demo.service.UserService;
 import com.example.demo.dto.request.auth.RegisterRequestDTO;
@@ -10,7 +11,6 @@ import com.example.demo.dto.response.ResLoginDTO;
 import com.example.demo.util.SecurityUtil;
 import com.example.demo.util.errors.CustomException;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,15 +19,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,7 +40,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<ResLoginDTO>> login(@Valid @RequestBody RequestLoginDTO requestLoginDTO){
         // nạp username va password vao Security
         UsernamePasswordAuthenticationToken authenticationToken
-                =new UsernamePasswordAuthenticationToken(requestLoginDTO.getUsername(), requestLoginDTO.getPassword());
+                =new UsernamePasswordAuthenticationToken(requestLoginDTO.getEmail(), requestLoginDTO.getPassword());
 
         //xac thuc nguoi dung => viết hàm loadUserByUsername
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
@@ -53,15 +50,19 @@ public class AuthController {
         //create a token
 
         ResLoginDTO resLoginDTO=new ResLoginDTO();
-        User user=authService.getUserByEmail(requestLoginDTO.getUsername());
+        User user=authService.getUserByEmail(requestLoginDTO.getEmail());
 
         resLoginDTO.setUser(resLoginDTO.new UserLogin(user.getUserId(), user.getEmail(), user.getName(),user.getRole()));
         resLoginDTO.setRole(user.getRole());
         //create acess token
         String access_token=securityUtil.createAccessToken(authentication.getName(),resLoginDTO);
-        resLoginDTO.setAccessToken(access_token);
+        resLoginDTO.setToken(access_token);
+        resLoginDTO.setRole(user.getRole());
+        resLoginDTO.setEmail(user.getEmail());
+        resLoginDTO.setName(user.getName());
+        resLoginDTO.setUserId(user.getUserId());
         //create refresh token
-        String new_refresh_token=securityUtil.createRefreshToken(requestLoginDTO.getUsername(),resLoginDTO);
+        String new_refresh_token=securityUtil.createRefreshToken(requestLoginDTO.getEmail(),resLoginDTO);
         //update user
         authService.updateUserToken(new_refresh_token,user.getEmail());
 
@@ -115,7 +116,7 @@ public class AuthController {
         resLoginDTO.setRole(user.getRole());
         //create acess token
         String access_token=securityUtil.createAccessToken(email,resLoginDTO);
-        resLoginDTO.setAccessToken(access_token);
+        resLoginDTO.setToken(access_token);
 
         //create refreshtoken
         String new_refresh_token=securityUtil.createRefreshToken(email,resLoginDTO);
@@ -162,10 +163,12 @@ public class AuthController {
     @GetMapping("/me")
     @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "Get current user", description = "Get information of the currently authenticated user")
-    public ResponseEntity<ApiResponse<String>> getCurrentUser(){
+    public ResponseEntity<ApiResponse<ResUserDTO>> getCurrentUser(){
         String user = securityUtil.getCurrentUserLogin()
                 .orElseThrow(()-> new RuntimeException("User not found"));
-        ApiResponse<String> response=new ApiResponse<>(HttpStatus.OK,"get current user successful",user,null);
+        User currentUser=authService.getUserByEmail(user);
+        ResUserDTO resLoginDTO= ResUserDTO.fromUser(currentUser);
+        ApiResponse<ResUserDTO> response=new ApiResponse<>(HttpStatus.OK,"get current user successful",resLoginDTO,null);
         return ResponseEntity.ok().body(response);
     }
 
