@@ -2,7 +2,10 @@ package com.example.demo.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.example.demo.domain.Assignment;
+import com.example.demo.domain.User;
 
 import java.time.LocalDateTime;
 
@@ -10,38 +13,54 @@ import java.time.LocalDateTime;
 @Table(name = "Submission")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Submission {
 
     @Id
-    private String submissionId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "assignmentId", nullable = false)
+    @Column(name = "assignmentId", nullable = false)
+    private Long assignmentId;
+
+    @Column(name = "studentId", nullable = false)
+    private String studentId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignmentId", insertable = false, updatable = false)
     private Assignment assignment;
 
-    @ManyToOne
-    @JoinColumn(name = "studentId", nullable = false)
-    private Student student;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "studentId", insertable = false, updatable = false)
+    private User student;
 
-    private LocalDateTime submittedAt;
+    @Column(name = "fileUrl", columnDefinition = "TEXT")
     private String fileUrl;
-    private Integer score;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "submittedAt", nullable = false)
+    private LocalDateTime submittedAt;
+
+    @Column(name = "grade")
+    private Double grade;
+
+    @Column(name = "feedback", columnDefinition = "TEXT")
     private String feedback;
 
-    private String fileName;
-
-    @Column(columnDefinition = "TEXT")
-    private String notes;
-
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('submitted','graded') DEFAULT 'submitted'")
-    private Status status = Status.submitted;
+    @Column(name = "status", nullable = false)
+    private SubmissionStatus status;
 
-    public enum Status {
-        submitted, graded
+    @PrePersist
+    protected void onCreate() {
+        if (submittedAt == null) {
+            submittedAt = LocalDateTime.now();
+        }
+        if (status == null) {
+            status = SubmissionStatus.SUBMITTED;
+        }
     }
 
-    // getters & setters
+    public enum SubmissionStatus {
+        SUBMITTED, GRADED
+    }
 }

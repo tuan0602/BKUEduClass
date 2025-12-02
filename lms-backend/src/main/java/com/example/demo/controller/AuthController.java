@@ -2,7 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.User;
 import com.example.demo.service.AuthService;
-import com.example.demo.service.UserService;
+// import com.example.demo.service.UserService;
 import com.example.demo.dto.request.auth.RegisterRequestDTO;
 import com.example.demo.dto.request.auth.RequestLoginDTO;
 import com.example.demo.dto.response.ApiResponse;

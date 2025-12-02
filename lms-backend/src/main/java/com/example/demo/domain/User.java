@@ -1,4 +1,5 @@
 package com.example.demo.domain;
+
 import com.example.demo.domain.enumeration.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -13,15 +14,14 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name="User")
+@Table(name = "User")
 @Getter
 @Setter
 @NoArgsConstructor
 public class User {
-    ////attribute/////
-    ///
+
     @Id
-    @GeneratedValue(strategy =  GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String userId;
 
     @NotBlank(message = "Email must not be blank")
@@ -31,28 +31,32 @@ public class User {
 
     @NotBlank
     @Size(min = 6, message = "Password must be at least 6 characters long")
+    @Column(nullable = false)
     private String password;
 
-
-
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
 
+    @NotBlank
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
     @Column(name = "avatar")
     private String avatar;
 
-    @Column(name = "phone")
+    @Column(name = "phone", length = 20)
     private String phone;
 
     @Column(name = "isLocked")
     private Boolean locked = false;
 
-    @Column(name = "createdAt", updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updatedAt")
+    private LocalDateTime updatedAt;
 
     @Column(columnDefinition = "TEXT")
     private String refreshToken;
@@ -65,6 +69,13 @@ public class User {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
     }
 
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }
