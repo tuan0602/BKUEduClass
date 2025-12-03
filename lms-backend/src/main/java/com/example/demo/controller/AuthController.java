@@ -11,6 +11,7 @@ import com.example.demo.dto.response.ResLoginDTO;
 import com.example.demo.util.SecurityUtil;
 import com.example.demo.util.errors.CustomException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -170,5 +171,16 @@ public class AuthController {
         ResUserDTO resLoginDTO= ResUserDTO.fromUser(currentUser);
         ApiResponse<ResUserDTO> response=new ApiResponse<>(HttpStatus.OK,"get current user successful",resLoginDTO,null);
         return ResponseEntity.ok().body(response);
+    }
+    @PostMapping("/reset-password")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "ResetPassword", description = "")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestParam String newPassword){
+        String email = securityUtil.getCurrentUserLogin()
+                .orElseThrow(()-> new RuntimeException("User not found"));
+        authService.resetPassword(email,newPassword);
+        ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"reset password successful",null,null);
+        return ResponseEntity.ok().body(response);
+
     }
 }
