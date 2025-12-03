@@ -7,6 +7,7 @@ import { Label } from '../ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import {  } from '../../lib/mockData';
 import { Camera, Save } from 'lucide-react';
+import { changePassword } from '../../lib/auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from 'sonner';
 
@@ -28,6 +29,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
     newPassword: '',
     confirmPassword: ''
   });
+  const [isChanging, setIsChanging] = useState(false);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -70,7 +72,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
     toast.success('Thông tin cá nhân đã được lưu thành công!');
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
@@ -86,13 +88,20 @@ export function ProfilePage({ user }: ProfilePageProps) {
       return;
     }
 
-    // Mock password change
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
-    toast.success('Mật khẩu đã được thay đổi thành công!');
+    try {
+      setIsChanging(true);
+      const resp = await changePassword(passwordData.newPassword);
+      if (resp.success) {
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        toast.success(resp.message || 'Mật khẩu đã được thay đổi thành công!');
+      } else {
+        toast.error(resp.message || 'Không thể đổi mật khẩu');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Lỗi khi đổi mật khẩu');
+    } finally {
+      setIsChanging(false);
+    }
   };
 
   return (
@@ -263,7 +272,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
                     />
                   </div>
 
-                  <Button onClick={handleChangePassword} className="bg-primary">
+                  <Button onClick={handleChangePassword} className="bg-primary" disabled={isChanging}>
                     Đổi mật khẩu
                   </Button>
                 </div>
