@@ -33,6 +33,7 @@ public class GlobalExceptionHandler {
                 .body("Duplicate: " + ex.getMessage());
     }
 
+
     // Bắt lỗi khi JSON không parse được (ví dụ enum sai, JSON sai cú pháp)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<String> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
@@ -89,4 +90,13 @@ public class GlobalExceptionHandler {
         res.setMessage("Thông tin đăng nhập không hợp lệ ...");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ApiResponse<Object>> handleSecurityException(SecurityException ex) {
+        ApiResponse<Object> res = new ApiResponse<>();
+        res.setStatusCode(Integer.toString(HttpStatus.FORBIDDEN.value())); // 403
+        res.setError(ex.getMessage());
+        res.setMessage("Bạn không có quyền thực hiện hành động này");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+    }
+
 }
