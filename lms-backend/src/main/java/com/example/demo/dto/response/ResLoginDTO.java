@@ -2,6 +2,7 @@ package com.example.demo.dto.response;
 
 
 import com.example.demo.domain.enumeration.Role;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,7 +16,7 @@ public class ResLoginDTO {
     private String userId;
     private String name;
     private String email;
-
+    @JsonIgnoreProperties
     private UserLogin user;
     private Role role;
 
@@ -33,14 +34,6 @@ public class ResLoginDTO {
 
     }
 
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public class UserGetAccount{
-        private UserLogin user;
-
-    }
     @Getter
     @Setter
     @AllArgsConstructor
