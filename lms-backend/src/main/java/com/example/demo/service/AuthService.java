@@ -39,6 +39,15 @@ public class AuthService {
     public User getUserByEmailAndRefreshToken(String email, String refreshToken) {
         return userRepository.findByEmailAndRefreshToken(email,refreshToken).orElse(null);
     }
+    public void resetPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            return ;
+        }
+        return ;
+    }
 
 
 }
