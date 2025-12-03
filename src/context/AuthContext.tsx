@@ -41,7 +41,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // ✅ Bỏ Authorization header vì interceptor đã tự động thêm
     api
       .get("/auth/me")
-      .then((res) => setUser(res.data))
+      .then((res) => {
+        // Backend wraps payload in an ApiResponse: { statusCode, message, data, ... }
+        // Normalise to our `User` shape.
+        const payload = res?.data?.data || res?.data;
+        // Some responses nest the user under `user` (login), others return flat user DTO.
+        const u = payload?.user || payload;
+        if (u) {
+          // Map fields to our User interface if needed
+          const mapped = {
+            userId: u.userId || u.id || u.userId || '',
+            name: u.name || u.fullName || '',
+            email: u.email || '',
+            role: u.role || 'STUDENT',
+            avatar: u.avatar,
+            phone: u.phone,
+            studentId: u.studentId,
+            teacherId: u.teacherId,
+          };
+          setUser(mapped as any);
+        } else {
+          setUser(null);
+        }
+      })
       .catch((error) => {
         console.error("Failed to fetch user:", error);
         localStorage.removeItem("token");
