@@ -1,5 +1,6 @@
 package com.example.demo.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.Setter;
 import com.example.demo.domain.User;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Course")
@@ -64,4 +66,12 @@ public class Course {
     public enum CourseStatus {
         ACTIVE, INACTIVE, ARCHIVED
     }
+    // 1 Course- N Assignment
+
+    
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    List<Assignment> assignments;
+
+
 }
