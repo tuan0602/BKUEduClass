@@ -171,5 +171,4 @@ public class AuthController {
         ApiResponse<ResUserDTO> response=new ApiResponse<>(HttpStatus.OK,"get current user successful",resLoginDTO,null);
         return ResponseEntity.ok().body(response);
     }
-
 }
