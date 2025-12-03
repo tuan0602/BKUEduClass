@@ -1,13 +1,15 @@
 package com.example.demo.domain;
 
+import com.example.demo.domain.enumeration.StatusAssignment;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.example.demo.domain.Course;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Assignment")
@@ -20,12 +22,7 @@ public class Assignment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "courseId", nullable = false)
-    private Long courseId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "courseId", insertable = false, updatable = false)
-    private Course course;
 
     @NotBlank
     @Column(name = "title", nullable = false, length = 200)
@@ -43,6 +40,9 @@ public class Assignment {
     @Column(name = "updatedAt")
     private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING)
+    private StatusAssignment status;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
@@ -55,4 +55,13 @@ public class Assignment {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    @JoinColumn(name = "courseId")
+    private Course course;
+
+
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<Question> questions;
 }
