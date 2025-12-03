@@ -56,7 +56,7 @@ const login = async (email: string, password: string) => {
     const res = await api.post("/auth/login", { email, password });
     console.log("🟢 Login response:", res.data); // ✅ DEBUG
     
-    const { token, userId, name, email: userEmail, role } = res.data;
+    const { token, userId, name, email: userEmail, role } = res.data.data;
     
     localStorage.setItem("token", token);
     setUser({ userId, name, email: userEmail, role });
