@@ -412,3 +412,357 @@ export const COURSE_ENROLLMENTS: { [courseId: string]: string[] } = {
   'course-2': ['student-1', 'student-2', 'student-3', 'student-9', 'student-10', 'student-4'],
   'course-3': ['student-1', 'student-5', 'student-6', 'student-7', 'student-8', 'student-9', 'student-10']
 };
+
+// Thêm vào file mockData.ts của bạn
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  answerA: string;
+  answerB: string;
+  answerC: string;
+  answerD: string;
+  correctAnswer: 'A' | 'B' | 'C' | 'D';
+}
+
+export interface QuizAssignment {
+  id: string;
+  courseId: string;
+  courseName: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
+  questions: QuizQuestion[];
+}
+
+export interface StudentQuizSubmission {
+  id: string;
+  quizId: string;
+  studentId: string;
+  studentName: string;
+  submittedAt: string;
+  answers: {
+    questionId: string;
+    selectedAnswer: 'A' | 'B' | 'C' | 'D';
+  }[];
+  score?: number;
+  totalQuestions: number;
+  status: 'submitted' | 'graded';
+}
+
+// Mock Quiz Assignments
+// Mock Quiz Assignments - FIXED để khớp với DEMO_COURSES
+export const DEMO_QUIZ_ASSIGNMENTS: QuizAssignment[] = [
+  {
+    id: '9001',
+    courseId: 'course-1', // Đổi từ '9007199254740991' thành 'course-1'
+    courseName: 'Lập trình Web nâng cao',
+    title: 'Kiểm tra giữa kỳ - HTML & CSS',
+    description: 'Kiểm tra kiến thức về HTML5 và CSS3 cơ bản',
+    dueDate: '2025-01-15T23:59:00',
+    createdAt: '2024-12-01T10:00:00',
+    updatedAt: '2024-12-01T10:00:00',
+    questions: [
+      {
+        id: 'q001',
+        question: 'HTML là viết tắt của gì?',
+        answerA: 'Hyper Text Markup Language',
+        answerB: 'High Tech Modern Language',
+        answerC: 'Home Tool Markup Language',
+        answerD: 'Hyperlinks and Text Markup Language',
+        correctAnswer: 'A'
+      },
+      {
+        id: 'q002',
+        question: 'Thẻ nào dùng để tạo heading lớn nhất trong HTML?',
+        answerA: '<heading>',
+        answerB: '<h6>',
+        answerC: '<h1>',
+        answerD: '<head>',
+        correctAnswer: 'C'
+      },
+      {
+        id: 'q003',
+        question: 'CSS là viết tắt của gì?',
+        answerA: 'Computer Style Sheets',
+        answerB: 'Cascading Style Sheets',
+        answerC: 'Creative Style Sheets',
+        answerD: 'Colorful Style Sheets',
+        correctAnswer: 'B'
+      },
+      {
+        id: 'q004',
+        question: 'Thuộc tính nào dùng để thay đổi màu nền trong CSS?',
+        answerA: 'bgcolor',
+        answerB: 'color',
+        answerC: 'background-color',
+        answerD: 'bg-color',
+        correctAnswer: 'C'
+      },
+      {
+        id: 'q005',
+        question: 'Selector nào có độ ưu tiên cao nhất trong CSS?',
+        answerA: 'Element selector',
+        answerB: 'Class selector',
+        answerC: 'ID selector',
+        answerD: 'Inline style',
+        correctAnswer: 'D'
+      }
+    ]
+  },
+  {
+    id: '9002',
+    courseId: 'course-1', // Đổi từ '9007199254740991' thành 'course-1'
+    courseName: 'Lập trình Web nâng cao',
+    title: 'Quiz JavaScript cơ bản',
+    description: 'Kiểm tra kiến thức về JavaScript ES6+',
+    dueDate: '2025-01-20T23:59:00',
+    createdAt: '2024-12-05T14:30:00',
+    updatedAt: '2024-12-05T14:30:00',
+    questions: [
+      {
+        id: 'q101',
+        question: 'Keyword nào dùng để khai báo biến không thể thay đổi giá trị?',
+        answerA: 'var',
+        answerB: 'let',
+        answerC: 'const',
+        answerD: 'final',
+        correctAnswer: 'C'
+      },
+      {
+        id: 'q102',
+        question: 'Hàm nào dùng để in ra console trong JavaScript?',
+        answerA: 'print()',
+        answerB: 'console.log()',
+        answerC: 'log()',
+        answerD: 'echo()',
+        correctAnswer: 'B'
+      },
+      {
+        id: 'q103',
+        question: 'Toán tử nào kiểm tra bằng cả giá trị và kiểu dữ liệu?',
+        answerA: '==',
+        answerB: '===',
+        answerC: '=',
+        answerD: '!=',
+        correctAnswer: 'B'
+      },
+      {
+        id: 'q104',
+        question: 'Array method nào dùng để thêm phần tử vào cuối mảng?',
+        answerA: 'unshift()',
+        answerB: 'push()',
+        answerC: 'pop()',
+        answerD: 'shift()',
+        correctAnswer: 'B'
+      }
+    ]
+  },
+  {
+    id: '9003',
+    courseId: 'course-2', // Đổi từ '9007199254740992' thành 'course-2'
+    courseName: 'Cơ sở dữ liệu',
+    title: 'Kiểm tra SQL cơ bản',
+    description: 'Câu hỏi về SQL query và database design',
+    dueDate: '2025-01-18T23:59:00',
+    createdAt: '2024-12-03T09:00:00',
+    updatedAt: '2024-12-03T09:00:00',
+    questions: [
+      {
+        id: 'q201',
+        question: 'Lệnh nào dùng để lấy dữ liệu từ database?',
+        answerA: 'GET',
+        answerB: 'FETCH',
+        answerC: 'SELECT',
+        answerD: 'RETRIEVE',
+        correctAnswer: 'C'
+      },
+      {
+        id: 'q202',
+        question: 'PRIMARY KEY có đặc điểm gì?',
+        answerA: 'Có thể null',
+        answerB: 'Có thể trùng lặp',
+        answerC: 'Unique và NOT NULL',
+        answerD: 'Chỉ có thể là số',
+        correctAnswer: 'C'
+      },
+      {
+        id: 'q203',
+        question: 'Câu lệnh nào dùng để xóa tất cả dữ liệu trong bảng?',
+        answerA: 'DELETE FROM table',
+        answerB: 'REMOVE table',
+        answerC: 'DROP table',
+        answerD: 'CLEAR table',
+        correctAnswer: 'A'
+      }
+    ]
+  },
+  {
+    id: '9004',
+    courseId: 'course-3', // Thêm quiz cho khóa Trí tuệ nhân tạo
+    courseName: 'Trí tuệ nhân tạo',
+    title: 'Kiểm tra Machine Learning cơ bản',
+    description: 'Câu hỏi về thuật toán ML và neural networks',
+    dueDate: '2025-01-25T23:59:00',
+    createdAt: '2024-12-07T10:00:00',
+    updatedAt: '2024-12-07T10:00:00',
+    questions: [
+      {
+        id: 'q301',
+        question: 'Thuật toán nào thuộc loại Supervised Learning?',
+        answerA: 'K-Means',
+        answerB: 'Linear Regression',
+        answerC: 'PCA',
+        answerD: 'DBSCAN',
+        correctAnswer: 'B'
+      },
+      {
+        id: 'q302',
+        question: 'Activation function phổ biến trong Neural Networks là?',
+        answerA: 'ReLU',
+        answerB: 'Linear',
+        answerC: 'Polynomial',
+        answerD: 'Exponential',
+        correctAnswer: 'A'
+      },
+      {
+        id: 'q303',
+        question: 'Overfitting xảy ra khi nào?',
+        answerA: 'Model quá đơn giản',
+        answerB: 'Có quá nhiều data',
+        answerC: 'Model học quá tốt trên training data',
+        answerD: 'Learning rate quá thấp',
+        correctAnswer: 'C'
+      }
+    ]
+  }
+];
+
+// Mock Student Quiz Submissions
+export const DEMO_QUIZ_SUBMISSIONS: StudentQuizSubmission[] = [
+  {
+    id: 'sub001',
+    quizId: '9001',
+    studentId: 's001',
+    studentName: 'Nguyễn Văn A',
+    submittedAt: '2024-12-10T14:30:00',
+    answers: [
+      { questionId: 'q001', selectedAnswer: 'A' },
+      { questionId: 'q002', selectedAnswer: 'C' },
+      { questionId: 'q003', selectedAnswer: 'B' },
+      { questionId: 'q004', selectedAnswer: 'C' },
+      { questionId: 'q005', selectedAnswer: 'D' }
+    ],
+    score: 100,
+    totalQuestions: 5,
+    status: 'graded'
+  },
+  {
+    id: 'sub002',
+    quizId: '9001',
+    studentId: 's002',
+    studentName: 'Trần Thị B',
+    submittedAt: '2024-12-10T16:45:00',
+    answers: [
+      { questionId: 'q001', selectedAnswer: 'A' },
+      { questionId: 'q002', selectedAnswer: 'C' },
+      { questionId: 'q003', selectedAnswer: 'A' }, // Sai
+      { questionId: 'q004', selectedAnswer: 'C' },
+      { questionId: 'q005', selectedAnswer: 'C' }  // Sai
+    ],
+    score: 60,
+    totalQuestions: 5,
+    status: 'graded'
+  },
+  {
+    id: 'sub003',
+    quizId: '9001',
+    studentId: 's003',
+    studentName: 'Lê Văn C',
+    submittedAt: '2024-12-11T10:20:00',
+    answers: [
+      { questionId: 'q001', selectedAnswer: 'A' },
+      { questionId: 'q002', selectedAnswer: 'C' },
+      { questionId: 'q003', selectedAnswer: 'B' },
+      { questionId: 'q004', selectedAnswer: 'A' }, // Sai
+      { questionId: 'q005', selectedAnswer: 'D' }
+    ],
+    score: 80,
+    totalQuestions: 5,
+    status: 'graded'
+  },
+  {
+    id: 'sub004',
+    quizId: '9002',
+    studentId: 's001',
+    studentName: 'Nguyễn Văn A',
+    submittedAt: '2024-12-12T09:15:00',
+    answers: [
+      { questionId: 'q101', selectedAnswer: 'C' },
+      { questionId: 'q102', selectedAnswer: 'B' },
+      { questionId: 'q103', selectedAnswer: 'B' },
+      { questionId: 'q104', selectedAnswer: 'B' }
+    ],
+    totalQuestions: 4,
+    status: 'submitted' // Chưa chấm
+  },
+  {
+    id: 'sub005',
+    quizId: '9002',
+    studentId: 's004',
+    studentName: 'Phạm Thị D',
+    submittedAt: '2024-12-12T11:30:00',
+    answers: [
+      { questionId: 'q101', selectedAnswer: 'C' },
+      { questionId: 'q102', selectedAnswer: 'B' },
+      { questionId: 'q103', selectedAnswer: 'A' }, // Sai
+      { questionId: 'q104', selectedAnswer: 'B' }
+    ],
+    score: 75,
+    totalQuestions: 4,
+    status: 'graded'
+  }
+];
+
+// Helper function: Tự động chấm điểm quiz
+export function autoGradeQuiz(
+  quizAssignment: QuizAssignment,
+  submission: StudentQuizSubmission
+): number {
+  let correctCount = 0;
+  
+  submission.answers.forEach(answer => {
+    const question = quizAssignment.questions.find(q => q.id === answer.questionId);
+    if (question && question.correctAnswer === answer.selectedAnswer) {
+      correctCount++;
+    }
+  });
+  
+  const totalQuestions = quizAssignment.questions.length;
+  const score = Math.round((correctCount / totalQuestions) * 100);
+  
+  return score;
+}
+
+// Helper function: Lấy thống kê quiz
+export function getQuizStats(quizId: string) {
+  const submissions = DEMO_QUIZ_SUBMISSIONS.filter(s => s.quizId === quizId);
+  const gradedSubmissions = submissions.filter(s => s.status === 'graded');
+  
+  const totalSubmissions = submissions.length;
+  const gradedCount = gradedSubmissions.length;
+  const pendingCount = totalSubmissions - gradedCount;
+  
+  const averageScore = gradedSubmissions.length > 0
+    ? gradedSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) / gradedSubmissions.length
+    : 0;
+  
+  return {
+    totalSubmissions,
+    gradedCount,
+    pendingCount,
+    averageScore: Math.round(averageScore)
+  };
+}
