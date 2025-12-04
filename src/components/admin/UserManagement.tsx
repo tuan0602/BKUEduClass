@@ -4,118 +4,117 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Search, Plus, Lock, Unlock, Trash2, Edit } from 'lucide-react';
-import { DEMO_USERS, User as MockUser } from '../../lib/mockData';
+import { Search, Plus, Lock, Unlock, Trash2, Edit, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useLockUser, useUnlockUser } from '../../hooks/useUsers';
+import { Role, User, CreateUserRequest, UpdateUserRequest } from '../../lib/user.types';
 
 export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [users, setUsers] = useState(DEMO_USERS.map(u => ({ ...u, isLocked: false })));
-  const [selectedUser, setSelectedUser] = useState<MockUser | null>(null);
-  const [formData, setFormData] = useState({
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  
+  const [formData, setFormData] = useState<CreateUserRequest>({
     name: '',
     email: '',
-    role: 'student' as 'admin' | 'teacher' | 'student',
+    role: Role.STUDENT,
     password: '',
     phone: '',
-    studentId: '',
-    teacherId: ''
+    department: '',
+    major: '',
+    year: undefined,
+    className: ''
   });
 
-  const getNextStudentId = () => {
-    const studentIds = users
-      .filter(u => u.role === 'student' && u.studentId)
-      .map(u => parseInt(u.studentId!.replace('SV', '') || '0'))
-      .filter(id => !isNaN(id));
-    const maxId = Math.max(...studentIds, 2021000);
-    return `SV${maxId + 1}`;
-  };
+  // Fetch users with filters
+  const { data: usersData, isLoading, isError } = useUsers({
+    page: currentPage,
+    size: 20,
+    search: searchQuery,
+    role: roleFilter === 'all' ? undefined : roleFilter
+  });
 
-  const getNextTeacherId = () => {
-    const teacherIds = users
-      .filter(u => u.role === 'teacher' && u.teacherId)
-      .map(u => parseInt(u.teacherId!.replace('GV', '') || '0'))
-      .filter(id => !isNaN(id));
-    const maxId = Math.max(...teacherIds, 0);
-    return `GV${String(maxId + 1).padStart(3, '0')}`;
-  };
+  // Mutations
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
+  const lockUserMutation = useLockUser();
+  const unlockUserMutation = useUnlockUser();
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (user.studentId?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (user.teacherId?.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const users = usersData?.result || [];
+  const totalPages = usersData?.meta.totalPages || 0;
 
-  const getRoleBadge = (role: string) => {
-    const variants: { [key: string]: { variant: any; label: string } } = {
-      admin: { variant: 'destructive', label: 'Quản trị viên' },
-      teacher: { variant: 'default', label: 'Giảng viên' },
-      student: { variant: 'secondary', label: 'Sinh viên' }
+  const getRoleBadge = (role: Role) => {
+    const variants: { [key in Role]: { variant: any; label: string } } = {
+      [Role.ADMIN]: { variant: 'destructive', label: 'Quản trị viên' },
+      [Role.TEACHER]: { variant: 'default', label: 'Giảng viên' },
+      [Role.STUDENT]: { variant: 'secondary', label: 'Sinh viên' }
     };
-    return variants[role] || variants.student;
+    return variants[role];
   };
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (!formData.name || !formData.email || !formData.password) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
 
-    // Check if email already exists
-    if (users.some(u => u.email === formData.email)) {
-      toast.error('Email đã tồn tại trong hệ thống');
-      return;
+    try {
+      await createUserMutation.mutateAsync(formData);
+      setCreateDialogOpen(false);
+      resetForm();
+    } catch (error: any) {
+      // Error đã được handle trong hook
     }
+  };
 
-    const newUser = {
-      id: `user-${Date.now()}`,
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+
+    const updateData: UpdateUserRequest = {
       name: formData.name,
       email: formData.email,
-      password: formData.password,
-      role: formData.role,
-      phone: formData.phone || undefined,
-      studentId: formData.role === 'student' ? (formData.studentId || getNextStudentId()) : undefined,
-      teacherId: formData.role === 'teacher' ? (formData.teacherId || getNextTeacherId()) : undefined,
-      isLocked: false as const
+      phone: formData.phone,
+      department: formData.department,
+      major: formData.major,
+      year: formData.year,
+      className: formData.className
     };
 
-    setUsers([...users, newUser]);
-    setCreateDialogOpen(false);
-    setFormData({ name: '', email: '', role: 'student', password: '', phone: '', studentId: '', teacherId: '' });
-    toast.success(`Tạo người dùng thành công! ${newUser.studentId ? `Mã sinh viên: ${newUser.studentId}` : newUser.teacherId ? `Mã giảng viên: ${newUser.teacherId}` : ''}`);
+    try {
+      await updateUserMutation.mutateAsync({ 
+        userId: selectedUser.userId, 
+        data: updateData 
+      });
+      setEditDialogOpen(false);
+      setSelectedUser(null);
+      resetForm();
+    } catch (error: any) {
+      // Error đã được handle trong hook
+    }
   };
 
-  const handleEditUser = () => {
+  const handleDeleteUser = async () => {
     if (!selectedUser) return;
 
-    setUsers(users.map(u => 
-      u.id === selectedUser.id 
-        ? { ...u, name: formData.name, email: formData.email, phone: formData.phone }
-        : u
-    ));
-    setEditDialogOpen(false);
-    setSelectedUser(null);
-    toast.success('Cập nhật thông tin thành công!');
+    try {
+      await deleteUserMutation.mutateAsync(selectedUser.userId);
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+    } catch (error: any) {
+      // Error đã được handle trong hook
+    }
   };
 
-  const handleDeleteUser = () => {
-    if (!selectedUser) return;
-
-    setUsers(users.filter(u => u.id !== selectedUser.id));
-    setDeleteDialogOpen(false);
-    setSelectedUser(null);
-    toast.success('Xóa người dùng thành công!');
-  };
-
-  const openEditDialog = (user: MockUser) => {
+  const openEditDialog = (user: User) => {
     setSelectedUser(user);
     setFormData({
       name: user.name,
@@ -123,24 +122,60 @@ export function UserManagement() {
       role: user.role,
       password: '',
       phone: user.phone || '',
-      studentId: user.studentId || '',
-      teacherId: user.teacherId || ''
+      department: user.department || '',
+      major: user.major || '',
+      year: user.year,
+      className: user.className || ''
     });
     setEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (user: MockUser) => {
+  const openDeleteDialog = (user: User) => {
     setSelectedUser(user);
     setDeleteDialogOpen(true);
   };
 
-  const toggleUserStatus = (userId: string) => {
-    setUsers(users.map(u => 
-      u.id === userId ? { ...u, isLocked: !u.isLocked } : u
-    ));
-    const user = users.find(u => u.id === userId);
-    toast.success(user?.isLocked ? 'Đã mở khóa tài khoản' : 'Đã khóa tài khoản');
+  const toggleUserStatus = async (user: User) => {
+    try {
+      if (user.locked) {
+        await unlockUserMutation.mutateAsync(user.userId);
+      } else {
+        await lockUserMutation.mutateAsync(user.userId);
+      }
+    } catch (error: any) {
+      // Error đã được handle trong hook
+    }
   };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      role: Role.STUDENT,
+      password: '',
+      phone: '',
+      department: '',
+      major: '',
+      year: undefined,
+      className: ''
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center text-red-500">
+        Lỗi khi tải dữ liệu. Vui lòng thử lại.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -157,7 +192,7 @@ export function UserManagement() {
               Tạo người dùng mới
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Tạo người dùng mới</DialogTitle>
               <DialogDescription>
@@ -184,43 +219,61 @@ export function UserManagement() {
               </div>
               <div className="space-y-2">
                 <Label>Vai trò *</Label>
-                <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
+                <Select value={formData.role} onValueChange={(value: Role) => setFormData({ ...formData, role: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="student">Sinh viên</SelectItem>
-                    <SelectItem value="teacher">Giảng viên</SelectItem>
-                    <SelectItem value="admin">Quản trị viên</SelectItem>
+                    <SelectItem value={Role.STUDENT}>Sinh viên</SelectItem>
+                    <SelectItem value={Role.TEACHER}>Giảng viên</SelectItem>
+                    <SelectItem value={Role.ADMIN}>Quản trị viên</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {formData.role === 'student' && (
+              
+              {/* Student fields */}
+              {formData.role === Role.STUDENT && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Ngành học</Label>
+                    <Input 
+                      placeholder="Khoa học máy tính" 
+                      value={formData.major}
+                      onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Năm học</Label>
+                    <Input 
+                      type="number"
+                      placeholder="2024" 
+                      value={formData.year || ''}
+                      onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) || undefined })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Lớp</Label>
+                    <Input 
+                      placeholder="CS101" 
+                      value={formData.className}
+                      onChange={(e) => setFormData({ ...formData, className: e.target.value })}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Teacher fields */}
+              {formData.role === Role.TEACHER && (
                 <div className="space-y-2">
-                  <Label>Mã sinh viên</Label>
+                  <Label>Khoa</Label>
                   <Input 
-                    placeholder="Để trống để tự động tạo mã" 
-                    value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                    placeholder="Khoa Công nghệ Thông tin" 
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Để trống để hệ thống tự động tạo mã
-                  </p>
                 </div>
               )}
-              {formData.role === 'teacher' && (
-                <div className="space-y-2">
-                  <Label>Mã giảng viên</Label>
-                  <Input 
-                    placeholder="Để trống để tự động tạo mã" 
-                    value={formData.teacherId}
-                    onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Để trống để hệ thống tự động tạo mã
-                  </p>
-                </div>
-              )}
+
               <div className="space-y-2">
                 <Label>Số điện thoại</Label>
                 <Input 
@@ -240,10 +293,15 @@ export function UserManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              <Button variant="outline" onClick={() => { setCreateDialogOpen(false); resetForm(); }}>
                 Hủy
               </Button>
-              <Button className="bg-primary" onClick={handleCreateUser}>
+              <Button 
+                className="bg-primary" 
+                onClick={handleCreateUser}
+                disabled={createUserMutation.isPending}
+              >
+                {createUserMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Tạo tài khoản
               </Button>
             </DialogFooter>
@@ -251,20 +309,33 @@ export function UserManagement() {
         </Dialog>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Tìm kiếm người dùng..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search & Filter */}
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Tìm kiếm người dùng..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={roleFilter} onValueChange={(value: any) => setRoleFilter(value)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Lọc theo vai trò" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
+            <SelectItem value={Role.STUDENT}>Sinh viên</SelectItem>
+            <SelectItem value={Role.TEACHER}>Giảng viên</SelectItem>
+            <SelectItem value={Role.ADMIN}>Quản trị viên</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Edit User Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa thông tin người dùng</DialogTitle>
             <DialogDescription>
@@ -294,12 +365,55 @@ export function UserManagement() {
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
+            
+            {/* Role-specific fields */}
+            {selectedUser?.role === Role.STUDENT && (
+              <>
+                <div className="space-y-2">
+                  <Label>Ngành học</Label>
+                  <Input 
+                    value={formData.major}
+                    onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Năm học</Label>
+                  <Input 
+                    type="number"
+                    value={formData.year || ''}
+                    onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) || undefined })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Lớp</Label>
+                  <Input 
+                    value={formData.className}
+                    onChange={(e) => setFormData({ ...formData, className: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+            
+            {selectedUser?.role === Role.TEACHER && (
+              <div className="space-y-2">
+                <Label>Khoa</Label>
+                <Input 
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { setEditDialogOpen(false); resetForm(); }}>
               Hủy
             </Button>
-            <Button className="bg-primary" onClick={handleEditUser}>
+            <Button 
+              className="bg-primary" 
+              onClick={handleEditUser}
+              disabled={updateUserMutation.isPending}
+            >
+              {updateUserMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Cập nhật
             </Button>
           </DialogFooter>
@@ -318,7 +432,12 @@ export function UserManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction 
+              onClick={handleDeleteUser} 
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -328,7 +447,7 @@ export function UserManagement() {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Danh sách người dùng ({filteredUsers.length})</CardTitle>
+          <CardTitle>Danh sách người dùng ({usersData?.meta.totalElements || 0})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -337,25 +456,33 @@ export function UserManagement() {
                 <TableHead>Tên</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Vai trò</TableHead>
-                <TableHead>Mã SV/GV</TableHead>
+                <TableHead>Thông tin bổ sung</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map(user => {
+              {users.map(user => {
                 const roleInfo = getRoleBadge(user.role);
                 return (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.userId}>
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant={roleInfo.variant as any}>{roleInfo.label}</Badge>
                     </TableCell>
-                    <TableCell>{user.studentId || user.teacherId || '-'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {user.role === Role.STUDENT && (user.major || user.className) && (
+                        <div>{user.major} {user.className && `- ${user.className}`}</div>
+                      )}
+                      {user.role === Role.TEACHER && user.department && (
+                        <div>{user.department}</div>
+                      )}
+                      {(!user.major && !user.className && !user.department) && '-'}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={user.isLocked ? 'destructive' : 'default'}>
-                        {user.isLocked ? 'Đã khóa' : 'Hoạt động'}
+                      <Badge variant={user.locked ? 'destructive' : 'default'}>
+                        {user.locked ? 'Đã khóa' : 'Hoạt động'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -366,10 +493,11 @@ export function UserManagement() {
                         <Button 
                           size="sm" 
                           variant="ghost" 
-                          onClick={() => toggleUserStatus(user.id)}
-                          className={user.isLocked ? 'text-green-600' : 'text-orange-600'}
+                          onClick={() => toggleUserStatus(user)}
+                          className={user.locked ? 'text-green-600' : 'text-orange-600'}
+                          disabled={lockUserMutation.isPending || unlockUserMutation.isPending}
                         >
-                          {user.isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          {user.locked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                         </Button>
                         <Button 
                           size="sm" 
@@ -386,6 +514,31 @@ export function UserManagement() {
               })}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                disabled={currentPage === 0}
+              >
+                Trước
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Trang {currentPage + 1} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={currentPage >= totalPages - 1}
+              >
+                Sau
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
