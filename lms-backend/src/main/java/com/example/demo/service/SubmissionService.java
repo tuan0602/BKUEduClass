@@ -102,4 +102,35 @@ public class SubmissionService {
         }
         return ReponseDetailSubmissionDTO.fromSubmission(submission);
     }
-}
+    public ReponseDetailSubmissionDTO getSubmissionsByAssigmentId(Long assignmentId,String userEmail) {
+        Assignment assignment=assignmentRepository.findById(assignmentId).orElse(null);
+        if (assignment==null){
+            throw new RuntimeException("Assignment not found");
+        }
+        User user=userRepository.findByEmail(userEmail).orElse(null);
+        if (user==null){
+            throw new RuntimeException("User not found");
+        }
+        Submission submission=submissionRepository.findByAssignmentAndStudent(assignment,user).orElse(null);
+        if (submission==null){
+            throw new RuntimeException("Submission not found");
+        }
+
+        switch (user.getRole()){
+            case STUDENT:
+                if (!submission.getStudent().getUserId().equals(user.getUserId())){
+                    throw new RuntimeException("Bạn không có quyền xem bài nộp này");
+                }
+                break;
+            case TEACHER:
+                if (!submission.getAssignment().getCourse().getTeacher().equals(user.getUserId())){
+                    throw new RuntimeException("Bạn không có quyền xem bài nộp này");
+                }
+                break;
+            default:
+                break;
+        }
+        return ReponseDetailSubmissionDTO.fromSubmission(submission);
+    }
+
+    }

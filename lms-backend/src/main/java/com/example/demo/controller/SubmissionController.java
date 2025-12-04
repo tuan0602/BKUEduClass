@@ -48,16 +48,18 @@ public class SubmissionController {
         ApiResponse<ReponseDetailSubmissionDTO> response = new ApiResponse<>(HttpStatus.OK, "Get submission result successfully", result, null);
         return ResponseEntity.ok().body(response);
     }
-    @GetMapping("/student/assignments/{assignmentId}")
-    @PreAuthorize("hasRole('STUDENT')")
-    @SecurityRequirement(name="BearerAuth")
-    @Operation(summary = "Get Detail of Assignment of Course for STUDENT", description = "")
-    public ResponseEntity<ApiResponse<ReponseAssignmentForStudentDTO>> getAssignmentDetail(@PathVariable Long assignmentId) {
+
+    @GetMapping("student/assigment/{assignmentId}/submission")
+    @PreAuthorize("hasAnyRole('STUDENT')")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "GetSubmissionResultByAssignmentID", description = "Get submission result by submission ID")
+    public ResponseEntity<ApiResponse<ReponseDetailSubmissionDTO>> getSubssionResultByAssigmentId(@Parameter Long assignmentId) {
         String user = securityUtil.getCurrentUserLogin()
                 .orElseThrow(()-> new RuntimeException("User not found"));
-        ReponseAssignmentForStudentDTO reponseAssignmentDTO = assignmentService.getAssignmentDetailForStudent(assignmentId, user);
-        ApiResponse<ReponseAssignmentForStudentDTO> response=new ApiResponse<>(HttpStatus.OK,"get assignment detail successful ",reponseAssignmentDTO,null);
+        ReponseDetailSubmissionDTO result=submissionService.getSubmissionsByAssigmentId(assignmentId, user);
+        ApiResponse<ReponseDetailSubmissionDTO> response = new ApiResponse<>(HttpStatus.OK, "Get submission result successfully", result, null);
         return ResponseEntity.ok().body(response);
     }
+
 
 }
