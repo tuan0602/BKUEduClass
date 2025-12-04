@@ -66,7 +66,7 @@ public class AssignmentController {
           ApiResponse<Assignment> response=new ApiResponse<>(HttpStatus.OK,"get assignment detail successful ",reponseAssignmentDTO,null);
           return ResponseEntity.ok().body(response);
      }
-     @DeleteMapping("/teacher/assignments/{assignmentId}/remove")
+     @DeleteMapping("/teacher/assignments/{assignmentId}")
      @PreAuthorize("hasRole('TEACHER')")
      @SecurityRequirement(name = "BearerAuth")
      @Operation(summary = "remove Assignment", description = "remove assignment with the provided information")
@@ -75,6 +75,19 @@ public class AssignmentController {
                   .orElseThrow(()-> new RuntimeException("User not found"));
           assignmentService.deleteAssignment(assignmentId, user);
           ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"remove assignment successful",null,null);
+          return ResponseEntity.ok().body(response);
+     }
+     @PutMapping("/teacher/assignments/{assignmentId}")
+     @PreAuthorize("hasRole('TEACHER')")
+     @SecurityRequirement(name = "BearerAuth")
+     @Operation(summary = "updateAssignment", description = "update assignment with the provided information")
+     public ResponseEntity<ApiResponse<Assignment>> updateAssigment(
+             @RequestBody @Valid CreateAssignmentDTO dto,
+             @PathVariable Long assignmentId) {
+          String user = securityUtil.getCurrentUserLogin()
+                  .orElseThrow(()-> new RuntimeException("User not found"));
+          Assignment createdAssignment = assignmentService.updateAssignment(assignmentId,dto, user);
+          ApiResponse<Assignment> response=new ApiResponse<>(HttpStatus.CREATED,"create successful",createdAssignment,null);
           return ResponseEntity.ok().body(response);
      }
 }
