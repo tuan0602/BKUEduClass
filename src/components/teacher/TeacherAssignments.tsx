@@ -1,18 +1,26 @@
-import { useState } from 'react';
-import { User } from '../../context/authContext';
+import { useState, useRef } from 'react';
+import { QuizAssignmentCreator } from './QuizAssignmentCreator'; 
+import { 
+  DEMO_QUIZ_ASSIGNMENTS, 
+  DEMO_QUIZ_SUBMISSIONS, 
+  getQuizStats, 
+  autoGradeQuiz,
+  DEMO_ASSIGNMENTS, 
+  DEMO_COURSES, 
+  DEMO_SUBMISSIONS, 
+  Submission 
+} from '../../lib/mockData';
+import { User } from '../../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Search, Plus, Edit, Trash2, Users, Eye } from 'lucide-react';
-import { DEMO_ASSIGNMENTS, DEMO_COURSES, DEMO_SUBMISSIONS, Submission } from '../../lib/mockData';
+import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 interface TeacherAssignmentsProps {
   user: User;
@@ -26,44 +34,58 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [gradeData, setGradeData] = useState({ score: '', feedback: '' });
-  const [formData, setFormData] = useState({
-    courseId: '',
-    title: '',
-    description: '',
-    dueDate: '',
-    maxScore: '100'
-  });
+  
+  // Ref to trigger quiz submit
+  const quizSubmitRef = useRef<(() => void) | null>(null);
 
-  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.userId);
+  // Fetch courses từ DB, fallback sang mock data nếu rỗng
+  const myCoursesFromDB = DEMO_COURSES.filter(course => course.teacherId === user.userId);
+  
+  // TEMPORARY: Dùng mock data để test khi chưa có courses trong DB
+  const myCourses = myCoursesFromDB.length > 0 
+    ? myCoursesFromDB 
+    : DEMO_COURSES.filter(course => course.teacherId === 'teacher-1');
+  
+  console.log('Using courses (fallback to mock):', myCourses);
+  
   const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>
     myCourses.some(course => course.id === assignment.courseId)
   );
 
-  const filteredAssignments = myAssignments.filter(assignment =>
+  // Lấy quiz của giáo viên
+  const myQuizzes = DEMO_QUIZ_ASSIGNMENTS.filter(quiz =>
+    myCourses.some(course => course.id === quiz.courseId)
+  );
+
+  // Merge quiz vào assignments để hiển thị chung
+  const allAssignments = [
+    ...myAssignments,
+    ...myQuizzes.map(quiz => ({
+      id: quiz.id,
+      courseId: quiz.courseId,
+      courseName: quiz.courseName,
+      title: `[QUIZ] ${quiz.title}`,
+      description: quiz.description,
+      dueDate: quiz.dueDate,
+      maxScore: 100, // Quiz mặc định 100 điểm
+      status: 'pending' as const
+    }))
+  ];
+
+  const filteredAssignments = allAssignments.filter(assignment =>
     assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     assignment.courseName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreateAssignment = () => {
-    if (!formData.courseId || !formData.title || !formData.dueDate) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
-      return;
-    }
-
-    // Mock create
-    setCreateDialogOpen(false);
-    setFormData({
-      courseId: '',
-      title: '',
-      description: '',
-      dueDate: '',
-      maxScore: '100'
-    });
-    toast.success('Đã tạo bài tập mới thành công!');
-  };
-
   const getSubmissionStats = (assignmentId: string) => {
     const submissions = DEMO_SUBMISSIONS.filter(s => s.assignmentId === assignmentId);
+    const graded = submissions.filter(s => s.status === 'graded').length;
+    return { total: submissions.length, graded };
+  };
+
+  // Hàm get submission stats cho quiz
+  const getQuizSubmissionStats = (quizId: string) => {
+    const submissions = DEMO_QUIZ_SUBMISSIONS.filter(s => s.quizId === quizId);
     const graded = submissions.filter(s => s.status === 'graded').length;
     return { total: submissions.length, graded };
   };
@@ -73,11 +95,16 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     setGradeDialogOpen(true);
   };
 
+  // Check if assignment is quiz
+  const isQuiz = (assignmentId: string) => assignmentId.startsWith('9');
+
   const assignmentSubmissions = selectedAssignment 
-    ? DEMO_SUBMISSIONS.filter(s => s.assignmentId === selectedAssignment)
+    ? (isQuiz(selectedAssignment)
+        ? DEMO_QUIZ_SUBMISSIONS.filter(s => s.quizId === selectedAssignment)
+        : DEMO_SUBMISSIONS.filter(s => s.assignmentId === selectedAssignment))
     : [];
 
-  const handleOpenSubmission = (submission: Submission) => {
+  const handleOpenSubmission = (submission: any) => {
     setSelectedSubmission(submission);
     setGradeData({
       score: submission.score?.toString() || '',
@@ -93,7 +120,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     }
 
     const score = parseFloat(gradeData.score);
-    const assignment = myAssignments.find(a => a.id === selectedAssignment);
+    const assignment = allAssignments.find(a => a.id === selectedAssignment);
     
     if (assignment && (score < 0 || score > assignment.maxScore)) {
       toast.error(`Điểm phải từ 0 đến ${assignment.maxScore}`);
@@ -124,88 +151,71 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
         </div>
 
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Tạo bài tập mới
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Tạo bài tập mới</DialogTitle>
-              <DialogDescription>
-                Nhập thông tin để tạo bài tập cho lớp học
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Lớp học</Label>
-                <Select
-                  value={formData.courseId}
-                  onValueChange={(value: string) => setFormData({ ...formData, courseId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn lớp học" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {myCourses.map(course => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+  <DialogTrigger asChild>
+    <Button className="bg-primary hover:bg-primary/90">
+      <Plus className="w-4 h-4 mr-2" />
+      Tạo bài kiểm tra trắc nghiệm
+    </Button>
+  </DialogTrigger>
 
-              <div className="space-y-2">
-                <Label>Tiêu đề bài tập</Label>
-                <Input
-                  placeholder="Nhập tiêu đề..."
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                />
-              </div>
+  <DialogContent
+    className="max-w-3xl h-[85vh] flex flex-col overflow-hidden"
+  >
+    <DialogHeader>
+      <DialogTitle>Tạo bài kiểm tra trắc nghiệm</DialogTitle>
+      <DialogDescription>
+        Tạo bài kiểm tra với câu hỏi trắc nghiệm 4 đáp án
+      </DialogDescription>
+    </DialogHeader>
 
-              <div className="space-y-2">
-                <Label>Mô tả</Label>
-                <Textarea
-                  placeholder="Mô tả yêu cầu bài tập..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
-                />
-              </div>
+    {/* FIX 1: container dành cho form + câu hỏi phải scroll riêng */}
+    <div className="flex-1 overflow-y-auto px-1 pb-4">
+      <QuizAssignmentCreator
+        myCourses={myCourses}
+        onSubmit={(data) => {
+          console.log('Quiz data:', data);
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Hạn nộp</Label>
-                  <Input
-                    type="datetime-local"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Điểm tối đa</Label>
-                  <Input
-                    type="number"
-                    placeholder="100"
-                    value={formData.maxScore}
-                    onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                Hủy
-              </Button>
-              <Button onClick={handleCreateAssignment} className="bg-primary">
-                Tạo bài tập
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          const newQuiz = {
+            id: `quiz-${Date.now()}`,
+            courseId: data.courseId,
+            courseName: myCourses.find(c => c.id === data.courseId)?.name || '',
+            title: data.title,
+            description: data.description,
+            dueDate: data.dueDate,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            questions: data.questions.map((q: any, idx: number) => ({
+              id: `q${Date.now()}-${idx}`,
+              question: q.question,
+              answerA: q.answerA,
+              answerB: q.answerB,
+              answerC: q.answerC,
+              answerD: q.answerD,
+              correctAnswer: q.correctAnswer
+            }))
+          };
+
+          DEMO_QUIZ_ASSIGNMENTS.push(newQuiz);
+          setCreateDialogOpen(false);
+          toast.success('Đã tạo bài kiểm tra thành công!');
+        }}
+        onCancel={() => setCreateDialogOpen(false)}
+        submitRef={quizSubmitRef}
+      />
+    </div>
+
+    {/* FIX 2: Footer phải nằm cố định dưới, không bị đẩy xuống */}
+    <DialogFooter className="border-t pt-4 mt-auto">
+      <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+        Hủy
+      </Button>
+      <Button onClick={() => quizSubmitRef.current?.()} className="bg-primary">
+        Tạo bài kiểm tra
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
       </div>
 
       {/* Search */}
@@ -238,13 +248,23 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
             </TableHeader>
             <TableBody>
               {filteredAssignments.map(assignment => {
-                const stats = getSubmissionStats(assignment.id);
+                const isQuizAssignment = isQuiz(assignment.id);
+                const stats = isQuizAssignment 
+                  ? getQuizSubmissionStats(assignment.id)
+                  : getSubmissionStats(assignment.id);
                 const dueDate = new Date(assignment.dueDate);
                 const isOverdue = dueDate < new Date();
 
                 return (
                   <TableRow key={assignment.id}>
-                    <TableCell>{assignment.title}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {assignment.title}
+                        {isQuizAssignment && (
+                          <Badge variant="outline" className="text-xs">Quiz</Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{assignment.courseName}</TableCell>
                     <TableCell>
                       <span className={isOverdue ? 'text-red-600' : ''}>
@@ -255,7 +275,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span>{stats.graded}/{stats.total}</span>
-                        {stats.total > 0 && (
+                        {stats.total > 0 && stats.total - stats.graded > 0 && (
                           <Badge variant="secondary">{stats.total - stats.graded} chờ chấm</Badge>
                         )}
                       </div>
@@ -306,20 +326,22 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
                 <TableRow>
                   <TableHead>Sinh viên</TableHead>
                   <TableHead>Thời gian nộp</TableHead>
-                  <TableHead>File</TableHead>
+                  {!selectedAssignment?.startsWith('9') && <TableHead>File</TableHead>}
                   <TableHead>Điểm</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {assignmentSubmissions.map(submission => (
+                {assignmentSubmissions.map((submission: any) => (
                   <TableRow key={submission.id}>
                     <TableCell>{submission.studentName}</TableCell>
                     <TableCell>
                       {new Date(submission.submittedAt).toLocaleString('vi-VN')}
                     </TableCell>
-                    <TableCell>{submission.fileUrl || '-'}</TableCell>
+                    {!selectedAssignment?.startsWith('9') && (
+                      <TableCell>{submission.fileUrl || '-'}</TableCell>
+                    )}
                     <TableCell>
                       {submission.score !== undefined ? submission.score : '-'}
                     </TableCell>
@@ -330,7 +352,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" onClick={() => handleOpenSubmission(submission)}>
-                        Chấm điểm
+                        {selectedAssignment?.startsWith('9') ? 'Xem chi tiết' : 'Chấm điểm'}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -350,63 +372,100 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
       <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Chấm điểm bài nộp</DialogTitle>
+            <DialogTitle>
+              {selectedAssignment?.startsWith('9') ? 'Chi tiết bài làm Quiz' : 'Chấm điểm bài nộp'}
+            </DialogTitle>
             <DialogDescription>
-              Nhập điểm số và phản hồi cho bài nộp của {selectedSubmission?.studentName}
+              {selectedAssignment?.startsWith('9') 
+                ? `Xem chi tiết bài làm của ${selectedSubmission?.studentName}`
+                : `Nhập điểm số và phản hồi cho bài nộp của ${selectedSubmission?.studentName}`
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">
-              {selectedSubmission?.fileUrl && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <Label className="text-sm text-muted-foreground">File đã nộp</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="flex-1">{selectedSubmission.fileName || selectedSubmission.fileUrl}</span>
-                    <Button size="sm" variant="outline" onClick={() => toast.success('Đang tải xuống...')}>
-                      Tải xuống
-                    </Button>
+              {/* Quiz submission details */}
+              {selectedAssignment?.startsWith('9') && selectedSubmission && (
+                <div className="space-y-3">
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <Label className="text-sm font-semibold">Thông tin bài làm</Label>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <p>Tổng câu hỏi: {(selectedSubmission as any).totalQuestions}</p>
+                      <p>Điểm số: {selectedSubmission.score || 'Chưa chấm'}/100</p>
+                      <p>Trạng thái: {selectedSubmission.status === 'graded' ? 'Đã chấm' : 'Chưa chấm'}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {selectedSubmission?.notes && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <Label className="text-sm text-muted-foreground">Ghi chú của sinh viên</Label>
-                  <p className="mt-1">{selectedSubmission.notes}</p>
+
+                  {(selectedSubmission as any).answers && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Đáp án đã chọn</Label>
+                      {(selectedSubmission as any).answers.map((answer: any, idx: number) => (
+                        <div key={idx} className="p-2 bg-gray-50 rounded text-sm">
+                          Câu {idx + 1}: <span className="font-semibold">{answer.selectedAnswer}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label>Điểm số *</Label>
-                <Input
-                  type="number"
-                  placeholder="Nhập điểm số..."
-                  value={gradeData.score}
-                  onChange={(e) => setGradeData({ ...gradeData, score: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Điểm tối đa: {myAssignments.find(a => a.id === selectedAssignment)?.maxScore || 100}
-                </p>
-              </div>
+              {/* Regular assignment submission */}
+              {!selectedAssignment?.startsWith('9') && selectedSubmission && (
+                <>
+                  {selectedSubmission.fileUrl && (
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <Label className="text-sm text-muted-foreground">File đã nộp</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="flex-1">{selectedSubmission.fileName || selectedSubmission.fileUrl}</span>
+                        <Button size="sm" variant="outline" onClick={() => toast.success('Đang tải xuống...')}>
+                          Tải xuống
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedSubmission.notes && (
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <Label className="text-sm text-muted-foreground">Ghi chú của sinh viên</Label>
+                      <p className="mt-1">{selectedSubmission.notes}</p>
+                    </div>
+                  )}
 
-              <div className="space-y-2">
-                <Label>Phản hồi</Label>
-                <Textarea
-                  placeholder="Nhập nhận xét và phản hồi cho sinh viên..."
-                  value={gradeData.feedback}
-                  onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
-                  rows={4}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label>Điểm số *</Label>
+                    <Input
+                      type="number"
+                      placeholder="Nhập điểm số..."
+                      value={gradeData.score}
+                      onChange={(e) => setGradeData({ ...gradeData, score: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Điểm tối đa: {allAssignments.find(a => a.id === selectedAssignment)?.maxScore || 100}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Phản hồi</Label>
+                    <Textarea
+                      placeholder="Nhập nhận xét và phản hồi cho sinh viên..."
+                      value={gradeData.feedback}
+                      onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
+                      rows={4}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSubmissionDialogOpen(false)}>
-              Hủy
+              {selectedAssignment?.startsWith('9') ? 'Đóng' : 'Hủy'}
             </Button>
-            <Button onClick={handleGradeSubmission} className="bg-primary">
-              Chấm điểm
-            </Button>
+            {!selectedAssignment?.startsWith('9') && (
+              <Button onClick={handleGradeSubmission} className="bg-primary">
+                Chấm điểm
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,0 +1,378 @@
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+
+interface Question {
+  id: number;
+  question: string;
+  answerA: string;
+  answerB: string;
+  answerC: string;
+  answerD: string;
+  correctAnswer: 'A' | 'B' | 'C' | 'D';
+}
+
+interface Course {
+  id: string;
+  name: string;
+  code?: string;
+  teacherId?: string;
+  [key: string]: any;
+}
+
+interface QuizAssignmentCreatorProps {
+  myCourses: Course[];
+  onSubmit: (data: any) => void;
+  onCancel: () => void;
+  submitRef?: React.MutableRefObject<(() => void) | null>;
+}
+
+export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef }: QuizAssignmentCreatorProps) {
+
+  const [formData, setFormData] = useState({
+    courseId: '',
+    title: '',
+    description: '',
+    dueDate: ''
+  });
+
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  const [currentQuestion, setCurrentQuestion] = useState<Question>({
+    id: Date.now(),
+    question: '',
+    answerA: '',
+    answerB: '',
+    answerC: '',
+    answerD: '',
+    correctAnswer: 'A'
+  });
+
+  useEffect(() => {
+    if (submitRef) {
+      submitRef.current = handleSubmit;
+    }
+  }, [formData, questions]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleQuestionChange = (field: string, value: string) => {
+    setCurrentQuestion(prev => ({ ...prev, [field]: value }));
+  };
+
+  const openQuestionModal = (index: number | null = null) => {
+    if (index !== null) {
+      setCurrentQuestion({ ...questions[index] });
+      setEditingIndex(index);
+    } else {
+      setCurrentQuestion({
+        id: Date.now(),
+        question: '',
+        answerA: '',
+        answerB: '',
+        answerC: '',
+        answerD: '',
+        correctAnswer: 'A'
+      });
+      setEditingIndex(null);
+    }
+    setShowQuestionModal(true);
+  };
+
+  const closeQuestionModal = () => {
+    setShowQuestionModal(false);
+    setEditingIndex(null);
+    setCurrentQuestion({
+      id: Date.now(),
+      question: '',
+      answerA: '',
+      answerB: '',
+      answerC: '',
+      answerD: '',
+      correctAnswer: 'A'
+    });
+  };
+
+  const saveQuestion = () => {
+    if (!currentQuestion.question.trim()) {
+      toast.error('Vui lòng nhập câu hỏi');
+      return;
+    }
+    if (!currentQuestion.answerA.trim() || !currentQuestion.answerB.trim() ||
+        !currentQuestion.answerC.trim() || !currentQuestion.answerD.trim()) {
+      toast.error('Vui lòng nhập đầy đủ 4 đáp án');
+      return;
+    }
+
+    if (editingIndex !== null) {
+      const updated = [...questions];
+      updated[editingIndex] = currentQuestion;
+      setQuestions(updated);
+      toast.success('Đã cập nhật câu hỏi');
+    } else {
+      setQuestions([...questions, currentQuestion]);
+      toast.success('Đã thêm câu hỏi');
+    }
+
+    closeQuestionModal();
+  };
+
+  const deleteQuestion = (index: number) => {
+    setQuestions(questions.filter((_, i) => i !== index));
+    toast.success('Đã xóa câu hỏi');
+  };
+
+  const handleSubmit = () => {
+    if (!formData.courseId || !formData.title || !formData.dueDate) {
+      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    if (questions.length === 0) {
+      toast.error('Vui lòng thêm ít nhất 1 câu hỏi');
+      return;
+    }
+
+    const payload = {
+      courseId: formData.courseId,
+      title: formData.title,
+      description: formData.description,
+      dueDate: formData.dueDate,
+      questions: questions.map(q => ({
+        question: q.question,
+        answerA: q.answerA,
+        answerB: q.answerB,
+        answerC: q.answerC,
+        answerD: q.answerD,
+        correctAnswer: q.correctAnswer
+      }))
+    };
+
+    console.log('POST /api/teacher/assignments', payload);
+    onSubmit(payload);
+  };
+
+  return (
+    <div className="space-y-6 py-4">
+
+      {/* ---------------- FORM THÔNG TIN ---------------- */}
+      <div className="space-y-4">
+        
+        <div className="space-y-2">
+          <Label>Lớp học *</Label>
+          <Select
+            value={formData.courseId}
+            onValueChange={(value) => handleInputChange('courseId', value)}
+          >
+            <SelectTrigger><SelectValue placeholder="Chọn lớp học" /></SelectTrigger>
+            <SelectContent>
+              {myCourses.map(course => (
+                <SelectItem key={course.id} value={course.id}>
+                  {course.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Tiêu đề *</Label>
+          <Input
+            placeholder="VD: Kiểm tra giữa kỳ"
+            value={formData.title}
+            onChange={(e) => handleInputChange('title', e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Mô tả</Label>
+          <Textarea
+            placeholder="Mô tả bài kiểm tra..."
+            value={formData.description}
+            onChange={(e) => handleInputChange('description', e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Hạn nộp *</Label>
+          <Input
+            type="datetime-local"
+            value={formData.dueDate}
+            onChange={(e) => handleInputChange('dueDate', e.target.value)}
+          />
+        </div>
+
+      </div>
+
+      {/* ---------------- DANH SÁCH QUESTION ---------------- */}
+      <div className="space-y-4">
+
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-lg">Câu hỏi</h3>
+            <p className="text-sm text-muted-foreground">
+              Đã thêm {questions.length} câu
+            </p>
+          </div>
+
+          <Button onClick={() => openQuestionModal()} variant="outline" size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm câu hỏi
+          </Button>
+        </div>
+
+        {/* --- FIX SCROLL: toàn bộ danh sách được cuộn --- */}
+        <div className="border rounded-lg bg-gray-50 p-3">
+          <div className="max-h-[350px] overflow-y-auto pr-2 space-y-3">
+
+            {questions.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="py-6 text-center text-muted-foreground">
+                  Chưa có câu hỏi nào. Nhấn "Thêm câu hỏi" để bắt đầu.
+                </CardContent>
+              </Card>
+            ) : (
+              questions.map((q, index) => (
+                <Card key={q.id}>
+                  <CardContent className="pt-3 pb-3">
+                    
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline">Câu {index + 1}</Badge>
+                          <Badge variant="secondary" className="text-green-700 bg-green-50">
+                            Đáp án: {q.correctAnswer}
+                          </Badge>
+                        </div>
+                        <p className="font-medium text-sm">{q.question}</p>
+                      </div>
+
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => openQuestionModal(index)}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => deleteQuestion(index)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {(['A','B','C','D'] as const).map(letter => {
+                        const value = q[`answer${letter}` as keyof Question] as string;
+                        const active = q.correctAnswer === letter;
+                        return (
+                          <div 
+                            key={letter}
+                            className={`p-2 rounded border ${
+                              active ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'
+                            }`}
+                          >
+                            <span className="font-semibold">{letter}.</span> {value}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                  </CardContent>
+                </Card>
+              ))
+            )}
+
+          </div>
+        </div>
+      </div>
+
+      {/* ---------------- MODAL QUESTION ---------------- */}
+      <Dialog open={showQuestionModal} onOpenChange={setShowQuestionModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingIndex !== null ? 'Chỉnh sửa câu hỏi' : 'Thêm câu hỏi mới'}
+            </DialogTitle>
+            <DialogDescription>
+              Nhập nội dung và đáp án cho câu hỏi trắc nghiệm.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+
+            <div className="space-y-2">
+              <Label>Câu hỏi *</Label>
+              <Textarea
+                value={currentQuestion.question}
+                onChange={(e) => handleQuestionChange('question', e.target.value)}
+                rows={3}
+                placeholder="Nhập nội dung câu hỏi..."
+              />
+            </div>
+
+            <div className="space-y-3">
+              {[ 'A', 'B', 'C', 'D' ].map(letter => (
+                <div key={letter} className="space-y-2">
+                  <Label>Đáp án {letter} *</Label>
+                  <Input
+                    value={currentQuestion[`answer${letter}` as keyof Question] as string}
+                    onChange={(e) =>
+                      handleQuestionChange(`answer${letter}`, e.target.value)
+                    }
+                    placeholder={`Nhập đáp án ${letter}`}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Đáp án đúng *</Label>
+              <Select
+                value={currentQuestion.correctAnswer}
+                onValueChange={(value: 'A' | 'B' | 'C' | 'D') =>
+                  handleQuestionChange('correctAnswer', value)
+                }
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">A</SelectItem>
+                  <SelectItem value="B">B</SelectItem>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="D">D</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeQuestionModal}>Hủy</Button>
+            <Button onClick={saveQuestion}>
+              {editingIndex !== null ? 'Cập nhật' : 'Thêm'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+    </div>
+  );
+}
