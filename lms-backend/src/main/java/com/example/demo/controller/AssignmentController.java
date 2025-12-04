@@ -1,14 +1,11 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.Assignment;
-import com.example.demo.dto.request.Assignment.AddQuestionDTO;
 import com.example.demo.dto.request.Assignment.CreateAssignmentDTO;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.dto.response.ResultPaginationDTO;
-import com.example.demo.dto.response.listAssignmentDTO.ReponseAssignmentDTO;
 import com.example.demo.service.AssignmentService;
 import com.example.demo.util.SecurityUtil;
-import com.sun.net.httpserver.Authenticator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -20,8 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -90,4 +85,5 @@ public class AssignmentController {
           ApiResponse<Assignment> response=new ApiResponse<>(HttpStatus.CREATED,"create successful",createdAssignment,null);
           return ResponseEntity.ok().body(response);
      }
+
 }
