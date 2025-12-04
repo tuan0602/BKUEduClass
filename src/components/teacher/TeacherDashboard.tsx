@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { BookOpen, FileText, Users, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { User } from '../../context/authContext';
+import { User } from '../../context/AuthContext';
 import { DEMO_COURSES, DEMO_ASSIGNMENTS, DEMO_SUBMISSIONS } from '../../lib/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 

@@ -143,7 +143,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="h-[calc(100vh-100px)] flex flex-col overflow-hidden space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1>Quản lý bài tập</h1>
@@ -158,10 +158,11 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     </Button>
   </DialogTrigger>
 
-  <DialogContent
-    className="max-w-3xl h-[85vh] flex flex-col overflow-hidden"
-  >
-    <DialogHeader>
+      <DialogContent
+      className="max-w-3xl flex flex-col p-0"
+      style={{ height: '85vh', maxHeight: '85vh' }}
+    >
+    <DialogHeader className="px-6 pt-6">
       <DialogTitle>Tạo bài kiểm tra trắc nghiệm</DialogTitle>
       <DialogDescription>
         Tạo bài kiểm tra với câu hỏi trắc nghiệm 4 đáp án
@@ -169,7 +170,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     </DialogHeader>
 
     {/* FIX 1: container dành cho form + câu hỏi phải scroll riêng */}
-    <div className="flex-1 overflow-y-auto px-1 pb-4">
+    <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px', minHeight: 0 }}>
       <QuizAssignmentCreator
         myCourses={myCourses}
         onSubmit={(data) => {
@@ -205,7 +206,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     </div>
 
     {/* FIX 2: Footer phải nằm cố định dưới, không bị đẩy xuống */}
-    <DialogFooter className="border-t pt-4 mt-auto">
+    <DialogFooter style={{ borderTop: '1px solid #e5e7eb', padding: '16px 24px', flexShrink: 0 }}>
       <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
         Hủy
       </Button>
@@ -313,7 +314,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
 
       {/* Grade Dialog */}
       <Dialog open={gradeDialogOpen} onOpenChange={setGradeDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl h-[80vh] max-h-[80vh!important] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>Danh sách bài nộp và chấm điểm</DialogTitle>
             <DialogDescription>
@@ -370,7 +371,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
 
       {/* Submission Dialog */}
       <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl h-[80vh] max-h-[80vh!important] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>
               {selectedAssignment?.startsWith('9') ? 'Chi tiết bài làm Quiz' : 'Chấm điểm bài nộp'}
@@ -383,7 +384,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="space-y-4">
+            <div className="space-y-4 flex-shrink-0">
               {/* Quiz submission details */}
               {selectedAssignment?.startsWith('9') && selectedSubmission && (
                 <div className="space-y-3">
