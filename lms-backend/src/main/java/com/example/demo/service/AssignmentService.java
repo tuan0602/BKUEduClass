@@ -23,6 +23,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,21 @@ public class AssignmentService {
         assignment.setDueDate(dto.getDueDate());
         assignment.setCourse(course);
         assignment.setStatus(StatusAssignment.DRAFT);
+        List<Question> questions= new ArrayList<Question>();
+        List<CreateAssignmentDTO.QuestionDTO> questionDTOs = new ArrayList<CreateAssignmentDTO.QuestionDTO>();
+        for (CreateAssignmentDTO.QuestionDTO questionDTO : dto.getQuestion()) {
+            Question question = new Question();
+            question.setQuestion(questionDTO.getQuestion());
+            question.setAnswerA(questionDTO.getAnswerA());
+            question.setAnswerB(questionDTO.getAnswerB());
+            question.setAnswerC(questionDTO.getAnswerC());
+            question.setAnswerD(questionDTO.getAnswerD());
+            question.setCorrectAnswer(questionDTO.getCorrectAnswer());
+            question.setAssignment(assignment);
+            questions.add(question);
+        }
+        assignment.setQuestions(questions);
+
         return assignmentRepository.save(assignment);
     }
     public void deleteAssignment(Long assignmentId,  String currentUserEmail) {
@@ -69,55 +85,7 @@ public class AssignmentService {
         questionRepository.deleteAll(questions);
         assignmentRepository.deleteById(assignmentId);
     }
-    public Assignment addQuestionToAssignment(Long assignmentId, AddQuestionDTO questionDTO, String currentUserEmail) {
-        Assignment assignment = assignmentRepository.findById(assignmentId).orElse(null);
-        if (assignment == null) {
-            throw new ResourceNotFoundException("Assignment not found");
-        }
-        validateTeacher(assignment.getCourse(), currentUserEmail);
-        if (assignment.getStatus() != StatusAssignment.DRAFT) {
-            throw new IllegalStateException("Cannot add questions to a published assignment");
-        }
-        Question question = new Question();
-        question.setQuestion(questionDTO.getQuestion());
-        question.setAnswerA(questionDTO.getAnswerA());
-        question.setAnswerB(questionDTO.getAnswerB());
-        question.setAnswerC(questionDTO.getAnswerC());
-        question.setAnswerD(questionDTO.getAnswerD());
-        question.setCorrectAnswer(questionDTO.getCorrectAnswer());
-        question.setAssignment(assignment);
-        // Thêm vào danh sách question của assignment
-        assignment.getQuestions().add(question);
-
-        // Save cả assignment và question (cascade ALL sẽ tự save question)
-        return assignmentRepository.save(assignment);
-    }
-    public Assignment removeQuestion(Long assignmentId, Long questionId, String currentUserEmail) {
-        Assignment assignment = assignmentRepository.findById(assignmentId).orElse(null);
-        if (assignment == null) {
-            throw new ResourceNotFoundException("Assignment not found");
-        }
-        validateTeacher(assignment.getCourse(), currentUserEmail);
-        if (assignment.getStatus() != StatusAssignment.DRAFT) {
-            throw new IllegalStateException("Cannot remove questions of published assignment");
-        }
-        questionRepository.deleteById(questionId);
-        return assignmentRepository.findById(assignmentId).orElse(null);
-    }
-    public void publishAssignment(Long assignmentId, String currentUserEmail) {
-        Assignment assignment = assignmentRepository.findById(assignmentId).orElse(null);
-        if (assignment == null) {
-            throw new ResourceNotFoundException("Assignment not found");
-        }
-        validateTeacher(assignment.getCourse(), currentUserEmail);
-        if (assignment.getStatus() != StatusAssignment.DRAFT) {
-            throw new IllegalStateException("Assignment is already published");
-        }
-        assignment.setStatus(StatusAssignment.PUBLISHED);
-        assignmentRepository.save(assignment);
-    }
-    //          ResultPaginationDTO resultPaginationDTO = assignmentService.getAllAssignmentsByCourseId(courseId, tile, pageable, user);
-    public ResultPaginationDTO getAllAssignmentsByCourseId(Long courseId,String tilte , Pageable pageable, String currentUserEmail) {
+    public ResultPaginationDTO getAllAssignmentsByCourseId(Long courseId,String title , Pageable pageable, String currentUserEmail) {
          if (courseRepository.findById(courseId).isEmpty()) {
              throw new ResourceNotFoundException("Course not found");
          }
@@ -150,8 +118,8 @@ public class AssignmentService {
          Specification<Assignment> spec = (root, query, cb) -> {
              Predicate predicate = cb.conjunction(); // bắt đầu với điều kiện luôn đúng
              //Nếu Có filter
-             if (tilte != null && !tilte.isEmpty()) {
-                 predicate = cb.and(predicate, cb.like(cb.lower(root.get("tilte")), "%" + tilte.toLowerCase() + "%"));
+             if (title != null && !title.isEmpty()) {
+                 predicate = cb.and(predicate, cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%"));
              }
              predicate = cb.and(predicate, cb.equal(root.get("course").get("id"), courseId));
              if (currentUser.getRole().toString().equals("STUDENT")){

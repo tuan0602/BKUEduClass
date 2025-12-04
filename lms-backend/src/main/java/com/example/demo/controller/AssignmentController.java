@@ -40,50 +40,7 @@ public class AssignmentController {
           ApiResponse<Assignment> response=new ApiResponse<>(HttpStatus.CREATED,"create successful",createdAssignment,null);
           return ResponseEntity.ok().body(response);
      }
-     @PostMapping("/teacher/assignments/{id}/questions")
-     @PreAuthorize("hasRole('TEACHER')")
-     @SecurityRequirement(name = "BearerAuth")
-     @Operation(summary = "add Question to Assignment", description = "create a new user with the provided information")
-     public ResponseEntity<ApiResponse<Assignment>> addQuestion(@RequestBody AddQuestionDTO question, @PathVariable Long id) {
-          String user = securityUtil.getCurrentUserLogin()
-                  .orElseThrow(()-> new RuntimeException("User not found"));
-          Assignment assignment=assignmentService.addQuestionToAssignment(id, question, user);
-          ApiResponse<Assignment> response=new ApiResponse<>(HttpStatus.OK,"add question successful",assignment,null);
-          return ResponseEntity.ok().body(response);
-     }
-     @DeleteMapping("/teacher/assignments/{assignmentId}/questions/{questionId}/remove")
-     @PreAuthorize("hasRole('TEACHER')")
-     @SecurityRequirement(name = "BearerAuth")
-     @Operation(summary = "remove Question of Assignment", description = "remove question of assignment with the provided information")
-     public ResponseEntity<ApiResponse<Assignment>> removeQuestion(@PathVariable Long assignmentId,@PathVariable Long questionId) {
-          String user = securityUtil.getCurrentUserLogin()
-                  .orElseThrow(()-> new RuntimeException("User not found"));
-          Assignment assignment=assignmentService.removeQuestion(assignmentId,questionId, user);
-          ApiResponse<Assignment> response=new ApiResponse<>(HttpStatus.OK,"add question successful",assignment,null);
-          return ResponseEntity.ok().body(response);
-     }
-     @DeleteMapping("/teacher/assignments/{assignmentId}/remove")
-     @PreAuthorize("hasRole('TEACHER')")
-     @SecurityRequirement(name = "BearerAuth")
-     @Operation(summary = "remove Assignment", description = "remove assignment with the provided information")
-     public ResponseEntity<ApiResponse<Void>> removeAssignment(@PathVariable Long assignmentId) {
-            String user = securityUtil.getCurrentUserLogin()
-                    .orElseThrow(()-> new RuntimeException("User not found"));
-            assignmentService.deleteAssignment(assignmentId, user);
-            ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"remove assignment successful",null,null);
-            return ResponseEntity.ok().body(response);
-     }
-     @PostMapping("/teacher/assignments/{assignmentId}/publish")
-     @PreAuthorize("hasRole('TEACHER')")
-     @SecurityRequirement(name="BearerAuth")
-     @Operation (summary = "publish Assignment", description = "publish assignment with the provided information")
-     public ResponseEntity<ApiResponse<Void>> pulishAssignment(@PathVariable Long    assignmentId) {
-          String user = securityUtil.getCurrentUserLogin()
-                  .orElseThrow(()-> new RuntimeException("User not found"));
-          assignmentService.publishAssignment(assignmentId, user);
-          ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"publish assignment successful",null,null);
-          return ResponseEntity.ok().body(response);
-     }
+
      @GetMapping("/assignments/course/{courseId}")
      @PreAuthorize("hasAnyRole('TEACHER','STUDENT')")
      @SecurityRequirement(name="BearerAuth")
@@ -91,10 +48,10 @@ public class AssignmentController {
      public ResponseEntity<ApiResponse<ResultPaginationDTO>> getAllAssignmentsByCourseId(
              @PathVariable Long courseId,
              @PageableDefault(size = 10,page=0,sort = "createdAt",direction = Sort.Direction.ASC) Pageable pageable,
-             @RequestParam(required = false) String tile) {
+             @RequestParam(required = false) String title) {
           String user = securityUtil.getCurrentUserLogin()
                   .orElseThrow(()-> new RuntimeException("User not found"));
-          ResultPaginationDTO resultPaginationDTO = assignmentService.getAllAssignmentsByCourseId(courseId, tile, pageable, user);
+          ResultPaginationDTO resultPaginationDTO = assignmentService.getAllAssignmentsByCourseId(courseId, title, pageable, user);
           ApiResponse<ResultPaginationDTO> response=new ApiResponse<>(HttpStatus.OK,"get all assignments successful ",resultPaginationDTO,null);
           return ResponseEntity.ok().body(response);
      }
