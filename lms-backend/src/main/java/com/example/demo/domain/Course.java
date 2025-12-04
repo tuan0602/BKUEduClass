@@ -33,18 +33,16 @@ public class Course {
     @Column(name = "code", unique = true, nullable = false, length = 50)
     private String code;
 
-    @Column(name = "teacherId", nullable = false)
-    private String teacherId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacherId", insertable = false, updatable = false)
+    @JoinColumn(name = "teacherId")
     private User teacher;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private CourseStatus status;
 
-    @Column(name = "createdAt", nullable = false, updatable = false)
+    @Column(name = "createdAt")
     private LocalDateTime createdAt;
 
     @Column(name = "updatedAt")

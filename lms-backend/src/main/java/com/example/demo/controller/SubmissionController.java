@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api")
+@RequestMapping("/api")
 public class SubmissionController {
     private final SubmissionService submissionService;
     private final AssignmentService assignmentService;
