@@ -1,6 +1,5 @@
-package com.example.demo.dto.request.Submission;
+package com.example.demo.dto.request.submission;
 
-import com.example.demo.domain.Submission;
 import com.example.demo.domain.enumeration.Answer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

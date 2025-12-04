@@ -2,8 +2,8 @@ package com.example.demo.service;
 
 import com.example.demo.domain.*;
 import com.example.demo.domain.enumeration.StatusAssignment;
-import com.example.demo.dto.request.Submission.SubmitSubmissionDTO;
-import com.example.demo.dto.response.SubmissionDTO.ReponseDetailSubmissionDTO;
+import com.example.demo.dto.request.submission.SubmitSubmissionDTO;
+import com.example.demo.dto.response.submissionDTO.ReponseDetailSubmissionDTO;
 import com.example.demo.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

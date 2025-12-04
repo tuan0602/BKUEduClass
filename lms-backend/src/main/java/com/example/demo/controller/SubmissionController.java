@@ -1,11 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.domain.Assignment;
-import com.example.demo.dto.request.Assignment.CreateAssignmentDTO;
-import com.example.demo.dto.request.Submission.SubmitSubmissionDTO;
+import com.example.demo.dto.request.submission.SubmitSubmissionDTO;
 import com.example.demo.dto.response.ApiResponse;
-import com.example.demo.dto.response.AssignmentDTO.ReponseAssignmentForStudentDTO;
-import com.example.demo.dto.response.SubmissionDTO.ReponseDetailSubmissionDTO;
+import com.example.demo.dto.response.submissionDTO.ReponseDetailSubmissionDTO;
 import com.example.demo.service.AssignmentService;
 import com.example.demo.service.SubmissionService;
 import com.example.demo.util.SecurityUtil;

@@ -1,9 +1,8 @@
  package com.example.demo.controller;
 
- import com.example.demo.domain.User;
  import com.example.demo.domain.enumeration.Role;
- import com.example.demo.dto.request.User.CreateUserRequest;
- import com.example.demo.dto.request.User.UpdateUserRequest;
+ import com.example.demo.dto.request.user.CreateUserRequest;
+ import com.example.demo.dto.request.user.UpdateUserRequest;
  import com.example.demo.dto.response.ApiResponse;
  import com.example.demo.dto.response.ResultPaginationDTO;
  import com.example.demo.dto.response.userDTO.ResUserDTO;
@@ -12,7 +11,6 @@
  import io.swagger.v3.oas.annotations.security.SecurityRequirement;
  import jakarta.validation.Valid;
  import lombok.RequiredArgsConstructor;
- import org.springframework.data.domain.PageRequest;
  import org.springframework.data.domain.Pageable;
  import org.springframework.data.domain.Sort;
  import org.springframework.data.web.PageableDefault;
@@ -20,8 +18,6 @@
  import org.springframework.http.ResponseEntity;
  import org.springframework.security.access.prepost.PreAuthorize;
  import org.springframework.web.bind.annotation.*;
-
- import java.util.List;
 
  @RestController
  @RequestMapping("/api/users")

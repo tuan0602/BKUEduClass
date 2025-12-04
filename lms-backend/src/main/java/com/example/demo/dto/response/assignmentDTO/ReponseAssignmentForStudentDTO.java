@@ -1,11 +1,6 @@
-package com.example.demo.dto.response.AssignmentDTO;
+package com.example.demo.dto.response.assignmentDTO;
 
 import com.example.demo.domain.Assignment;
-import com.example.demo.domain.Submission;
-import com.example.demo.domain.enumeration.Answer;
-import com.example.demo.domain.enumeration.StatusAssignment;
-import com.example.demo.dto.request.Assignment.CreateAssignmentDTO;
-import com.example.demo.dto.response.SubmissionDTO.ReponseDetailSubmissionDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

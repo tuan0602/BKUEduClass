@@ -1,7 +1,6 @@
-package com.example.demo.dto.response.AssignmentDTO;
+package com.example.demo.dto.response.assignmentDTO;
 
 import com.example.demo.domain.Assignment;
-import com.example.demo.domain.User;
 import com.example.demo.domain.enumeration.StatusAssignment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
