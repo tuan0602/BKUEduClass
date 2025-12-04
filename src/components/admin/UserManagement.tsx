@@ -365,6 +365,20 @@ export function UserManagement() {
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Vai trò *</Label>
+              <Select value={formData.role} onValueChange={(value: Role) => setFormData({ ...formData, role: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={Role.STUDENT}>Sinh viên</SelectItem>
+                  <SelectItem value={Role.TEACHER}>Giảng viên</SelectItem>
+                  <SelectItem value={Role.ADMIN}>Quản trị viên</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             
             {/* Role-specific fields */}
             {selectedUser?.role === Role.STUDENT && (
