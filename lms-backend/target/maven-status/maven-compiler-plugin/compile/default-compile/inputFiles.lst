@@ -6,6 +6,7 @@ D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\config\UserDetailsCustom.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\AssignmentController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\AuthController.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\CourseController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\SubmissionController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\UserController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\DemoApplication.java
@@ -31,12 +32,15 @@ D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\Assignment\CreateAssignmentDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\auth\RegisterRequestDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\auth\RequestLoginDTO.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\Course\CourseDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\Submission\SubmitSubmissionDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\User\CreateUserRequest.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\User\UpdateUserRequest.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\ApiResponse.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\AssignmentDTO\ReponseAssignmentDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\AssignmentDTO\ReponseAssignmentForStudentDTO.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\CourseDTO\ReponseCourseDTO.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\CourseDTO\ReponseDetailCourseDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\ResLoginDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\ResultPaginationDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\SubmissionDTO\ReponseDetailSubmissionDTO.java
@@ -49,6 +53,7 @@ D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\UserRepository.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\AssignmentService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\AuthService.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\CourseService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\SubmissionService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\UserService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\util\errors\CustomException.java
