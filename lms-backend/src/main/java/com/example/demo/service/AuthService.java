@@ -1,16 +1,11 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.User;
-import com.example.demo.dto.request.User.CreateUserRequest;
-import com.example.demo.dto.response.ResLoginDTO;
-import com.example.demo.dto.response.userDTO.ResUserDTO;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.util.errors.CustomException;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

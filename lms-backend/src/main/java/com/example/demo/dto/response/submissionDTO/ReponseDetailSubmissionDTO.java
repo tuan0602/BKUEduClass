@@ -1,4 +1,4 @@
-package com.example.demo.dto.response.SubmissionDTO;
+package com.example.demo.dto.response.submissionDTO;
 
 import com.example.demo.domain.Submission;
 

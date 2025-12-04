@@ -3,11 +3,10 @@ package com.example.demo.service;
 import com.example.demo.domain.Course;
 import com.example.demo.domain.User;
 import com.example.demo.domain.enumeration.Role;
-import com.example.demo.dto.request.Course.CourseDTO;
-import com.example.demo.dto.response.CourseDTO.ReponseCourseDTO;
-import com.example.demo.dto.response.CourseDTO.ReponseDetailCourseDTO;
+import com.example.demo.dto.request.course.CourseDTO;
+import com.example.demo.dto.response.courseDTO.ReponseCourseDTO;
+import com.example.demo.dto.response.courseDTO.ReponseDetailCourseDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
-import com.example.demo.dto.response.userDTO.ResUserDTO;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -17,9 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor

@@ -2,8 +2,8 @@
 
  import com.example.demo.domain.User;
  import com.example.demo.domain.enumeration.Role;
- import com.example.demo.dto.request.User.CreateUserRequest;
- import com.example.demo.dto.request.User.UpdateUserRequest;
+ import com.example.demo.dto.request.user.CreateUserRequest;
+ import com.example.demo.dto.request.user.UpdateUserRequest;
  import com.example.demo.dto.response.ResultPaginationDTO;
  import com.example.demo.dto.response.userDTO.ResUserDTO;
 
@@ -20,10 +20,7 @@
  import org.springframework.stereotype.Service;
  import org.springframework.transaction.annotation.Transactional;
 
- import java.time.LocalDate;
  import java.util.List;
- import java.util.Optional;
- import java.util.UUID;
  import java.util.stream.Collectors;
 
  @Service
@@ -91,15 +88,6 @@
      public ResUserDTO updateUser(String userId, UpdateUserRequest request) {
          User user = userRepository.findById(userId)
                  .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-
-         // Update basic info
-         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-             if (userRepository.existsByEmail(request.getEmail())) {
-                 throw new DuplicateResourceException("Email already exists: " + request.getEmail());
-             }
-             user.setEmail(request.getEmail());
-         }
-
          if (request.getName() != null) {
              user.setName(request.getName());
          }
@@ -182,12 +170,6 @@
          // Update role
          user.setRole(newRole);
 
-         // Tạo record mới
-         CreateUserRequest createRequest = new CreateUserRequest();
-         createRequest.setDepartment(request.getDepartment());
-         createRequest.setMajor(request.getMajor());
-         createRequest.setYear(request.getYear());
-         createRequest.setClassName(request.getClassName());
 
      }
 

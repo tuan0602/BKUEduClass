@@ -1,11 +1,7 @@
-package com.example.demo.dto.response.CourseDTO;
+package com.example.demo.dto.response.courseDTO;
 
 import com.example.demo.domain.Course;
-import com.example.demo.domain.User;
 import com.example.demo.dto.response.userDTO.ResUserDTO;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

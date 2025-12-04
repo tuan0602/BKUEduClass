@@ -1,4 +1,4 @@
-package com.example.demo.dto.request.Assignment;
+package com.example.demo.dto.request.assignment;
 
 import com.example.demo.domain.enumeration.Answer;
 import com.example.demo.domain.enumeration.StatusAssignment;

@@ -1,9 +1,9 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.Course;
-import com.example.demo.dto.request.Course.CourseDTO;
+import com.example.demo.dto.request.course.CourseDTO;
 import com.example.demo.dto.response.ApiResponse;
-import com.example.demo.dto.response.CourseDTO.ReponseDetailCourseDTO;
+import com.example.demo.dto.response.courseDTO.ReponseDetailCourseDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.service.CourseService;
 import com.example.demo.util.SecurityUtil;
