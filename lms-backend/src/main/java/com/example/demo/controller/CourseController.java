@@ -76,8 +76,4 @@ public class CourseController {
         ApiResponse<Course> response = new ApiResponse<>(HttpStatus.OK, "update successful", course, null);
         return ResponseEntity.ok().body(response);
     }
-
-
-
-
 }
