@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import com.example.demo.domain.User;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,7 +37,8 @@ public class Course {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacherId")
+    @JoinColumn(name = "teacherId", nullable = true)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User teacher;
 
     @Enumerated(EnumType.STRING)
@@ -66,7 +69,7 @@ public class Course {
     }
     // 1 Course- N Assignment
 
-    
+
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     List<Assignment> assignments;
