@@ -1,6 +1,7 @@
 package com.example.demo.dto.request.Assignment;
 
 import com.example.demo.domain.enumeration.Answer;
+import com.example.demo.domain.enumeration.StatusAssignment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class CreateAssignmentDTO {
     public String description;
     public LocalDateTime dueDate;
     public List<QuestionDTO> question;
+    public StatusAssignment status;
     @Getter
     @Setter
     @AllArgsConstructor

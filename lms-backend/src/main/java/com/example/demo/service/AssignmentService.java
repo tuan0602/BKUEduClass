@@ -54,7 +54,7 @@ public class AssignmentService {
         assignment.setDescription(dto.getDescription());
         assignment.setDueDate(dto.getDueDate());
         assignment.setCourse(course);
-        assignment.setStatus(StatusAssignment.DRAFT);
+        assignment.setStatus(dto.getStatus());
         List<Question> questions= new ArrayList<Question>();
         List<CreateAssignmentDTO.QuestionDTO> questionDTOs = new ArrayList<CreateAssignmentDTO.QuestionDTO>();
         for (CreateAssignmentDTO.QuestionDTO questionDTO : dto.getQuestion()) {
@@ -151,4 +151,40 @@ public class AssignmentService {
          validateTeacher(assignment.getCourse(), currentUserEmail);
          return assignment;
      }
+     public Assignment updateAssignment(Long assignmentId,CreateAssignmentDTO dto, String currentUserEmail) {
+         Course course = courseRepository.findById(assignmentId).orElse(null);
+         if (course == null) {
+            throw new ResourceNotFoundException("Course not found");
+         }
+         Assignment assignment = assignmentRepository.findById(assignmentId).orElse(null);
+         if (assignment == null) {
+             throw new ResourceNotFoundException("Assignment not found");
+         }
+         validateTeacher(assignment.getCourse(), currentUserEmail);
+         if (assignment.getStatus() != StatusAssignment.DRAFT) {
+             throw new IllegalStateException("Cannot update a published assignment");
+         }
+            //Cập nhật các trường cần thiết
+         assignment.getQuestions().clear();  // Hibernate tự orphan-delete
+
+         assignment.setTitle(dto.getTitle());
+         assignment.setDescription(dto.getDescription());
+         assignment.setDueDate(dto.getDueDate());
+         assignment.setCourse(course);
+         assignment.setStatus(dto.getStatus());
+         List<CreateAssignmentDTO.QuestionDTO> questionDTOs = new ArrayList<CreateAssignmentDTO.QuestionDTO>();
+         for (CreateAssignmentDTO.QuestionDTO questionDTO : dto.getQuestion()) {
+             Question question = new Question();
+             question.setQuestion(questionDTO.getQuestion());
+             question.setAnswerA(questionDTO.getAnswerA());
+             question.setAnswerB(questionDTO.getAnswerB());
+             question.setAnswerC(questionDTO.getAnswerC());
+             question.setAnswerD(questionDTO.getAnswerD());
+             question.setCorrectAnswer(questionDTO.getCorrectAnswer());
+             question.setAssignment(assignment);
+             assignment.getQuestions().add(question);
+         }
+         return assignmentRepository.save(assignment);
+     }
+
 }
