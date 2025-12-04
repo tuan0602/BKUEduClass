@@ -66,4 +66,15 @@ public class AssignmentController {
           ApiResponse<Assignment> response=new ApiResponse<>(HttpStatus.OK,"get assignment detail successful ",reponseAssignmentDTO,null);
           return ResponseEntity.ok().body(response);
      }
+     @DeleteMapping("/teacher/assignments/{assignmentId}/remove")
+     @PreAuthorize("hasRole('TEACHER')")
+     @SecurityRequirement(name = "BearerAuth")
+     @Operation(summary = "remove Assignment", description = "remove assignment with the provided information")
+     public ResponseEntity<ApiResponse<Void>> removeAssignment(@PathVariable Long assignmentId) {
+          String user = securityUtil.getCurrentUserLogin()
+                  .orElseThrow(()-> new RuntimeException("User not found"));
+          assignmentService.deleteAssignment(assignmentId, user);
+          ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"remove assignment successful",null,null);
+          return ResponseEntity.ok().body(response);
+     }
 }
