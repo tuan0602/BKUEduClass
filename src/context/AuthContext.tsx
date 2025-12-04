@@ -101,7 +101,7 @@ const login = async (email: string, password: string) => {
       const res = await api.post("/auth/register", { name, email, password, role });
       
       // ✅ SỬA: Backend trả về flat object
-      const { token, userId, name: userName, email: userEmail, role: userRole } = res.data;
+      const { token, userId, name: userName, email: userEmail, role: userRole } = res.data.data;
       
       localStorage.setItem("token", token);
       setUser({ userId, name: userName, email: userEmail, role: userRole });
