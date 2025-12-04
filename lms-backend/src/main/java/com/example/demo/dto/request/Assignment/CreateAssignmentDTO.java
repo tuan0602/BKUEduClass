@@ -19,8 +19,8 @@ public class CreateAssignmentDTO {
     public String title;
     public String description;
     public LocalDateTime dueDate;
-    public List<QuestionDTO> question;
     public StatusAssignment status;
+    public List<QuestionDTO> question;
     @Getter
     @Setter
     @AllArgsConstructor

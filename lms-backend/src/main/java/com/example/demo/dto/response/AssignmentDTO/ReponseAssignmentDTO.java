@@ -1,9 +1,8 @@
-package com.example.demo.dto.response.listAssignmentDTO;
+package com.example.demo.dto.response.AssignmentDTO;
 
 import com.example.demo.domain.Assignment;
+import com.example.demo.domain.User;
 import com.example.demo.domain.enumeration.StatusAssignment;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,4 +33,5 @@ public class ReponseAssignmentDTO {
          dto.status = assignment.getStatus();
          return dto;
    }
+
 }

@@ -5,11 +5,10 @@ import com.example.demo.domain.Course;
 import com.example.demo.domain.Question;
 import com.example.demo.domain.User;
 import com.example.demo.domain.enumeration.StatusAssignment;
-import com.example.demo.dto.request.Assignment.AddQuestionDTO;
 import com.example.demo.dto.request.Assignment.CreateAssignmentDTO;
-import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.dto.response.AssignmentDTO.ReponseAssignmentForStudentDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
-import com.example.demo.dto.response.listAssignmentDTO.ReponseAssignmentDTO;
+import com.example.demo.dto.response.AssignmentDTO.ReponseAssignmentDTO;
 import com.example.demo.repository.AssignmentRepository;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.QuestionRepository;
@@ -21,7 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -186,5 +184,13 @@ public class AssignmentService {
          }
          return assignmentRepository.save(assignment);
      }
+    public ReponseAssignmentForStudentDTO getAssignmentDetailForStudent(Long assignmentId, String currentUserEmail) {
+        Assignment assignment = assignmentRepository.findById(assignmentId).orElse(null);
+        if (assignment == null) {
+            throw new ResourceNotFoundException("Assignment not found");
+        }
+        //Validate student is enrolled in the course
+        return ReponseAssignmentForStudentDTO.fromAssignment(assignment);
+    }
 
 }
