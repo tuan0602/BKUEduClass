@@ -83,10 +83,7 @@ export function UserManagement() {
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
-      department: formData.department,
-      major: formData.major,
-      year: formData.year,
-      className: formData.className
+      role: formData.role,
     };
 
     try {

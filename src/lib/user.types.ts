@@ -61,11 +61,7 @@ export interface UpdateUserRequest {
   name?: string;
   role?: Role;
   phone?: string;
-  // Role-specific fields
-  department?: string;
-  major?: string;
-  year?: number;
-  className?: string;
+
 }
 
 // ============= Query Params =============
