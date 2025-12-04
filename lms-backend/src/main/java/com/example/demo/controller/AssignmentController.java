@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.domain.Assignment;
 import com.example.demo.dto.request.Assignment.CreateAssignmentDTO;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.dto.response.AssignmentDTO.ReponseAssignmentForStudentDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.service.AssignmentService;
 import com.example.demo.util.SecurityUtil;
@@ -83,6 +84,17 @@ public class AssignmentController {
                   .orElseThrow(()-> new RuntimeException("User not found"));
           Assignment createdAssignment = assignmentService.updateAssignment(assignmentId,dto, user);
           ApiResponse<Assignment> response=new ApiResponse<>(HttpStatus.CREATED,"create successful",createdAssignment,null);
+          return ResponseEntity.ok().body(response);
+     }
+     @GetMapping("/student/assignments/{assignmentId}")
+     @PreAuthorize("hasRole('STUDENT')")
+     @SecurityRequirement(name="BearerAuth")
+     @Operation(summary = "Get Detail of Assignment of Course for STUDENT", description = "")
+     public ResponseEntity<ApiResponse<ReponseAssignmentForStudentDTO>> getAssignmentDetailforStudent(@PathVariable Long assignmentId) {
+          String user = securityUtil.getCurrentUserLogin()
+                  .orElseThrow(()-> new RuntimeException("User not found"));
+          ReponseAssignmentForStudentDTO reponseAssignmentDTO = assignmentService.getAssignmentDetailForStudent(assignmentId, user);
+          ApiResponse<ReponseAssignmentForStudentDTO> response=new ApiResponse<>(HttpStatus.OK,"get assignment detail successful ",reponseAssignmentDTO,null);
           return ResponseEntity.ok().body(response);
      }
 
