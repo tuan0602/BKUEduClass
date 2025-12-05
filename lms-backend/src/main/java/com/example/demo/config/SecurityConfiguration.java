@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthen
 import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -39,7 +40,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-            CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
+            CustomAccessDeniedHandler customAccessDeniedHandler,
+            UserLockedCheckFilter userLockedCheckFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
@@ -73,7 +75,7 @@ public class SecurityConfiguration {
 //                    .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint()) //401
 //                    .accessDeniedHandler(customAccessDeniedHandler)      )     // 403
 //                    //403
-
+                .addFilterAfter(userLockedCheckFilter, BearerTokenAuthenticationFilter.class)
                 .formLogin(form -> form.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();
