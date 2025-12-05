@@ -40,8 +40,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-            CustomAccessDeniedHandler customAccessDeniedHandler,
-            UserLockedCheckFilter userLockedCheckFilter) throws Exception {
+            CustomAccessDeniedHandler customAccessDeniedHandler
+             ) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
@@ -75,7 +75,6 @@ public class SecurityConfiguration {
 //                    .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint()) //401
 //                    .accessDeniedHandler(customAccessDeniedHandler)      )     // 403
 //                    //403
-                .addFilterAfter(userLockedCheckFilter, BearerTokenAuthenticationFilter.class)
                 .formLogin(form -> form.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();

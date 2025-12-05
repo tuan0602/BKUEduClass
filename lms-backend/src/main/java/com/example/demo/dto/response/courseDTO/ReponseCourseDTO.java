@@ -2,8 +2,7 @@ package com.example.demo.dto.response.courseDTO;
 
 
 import com.example.demo.domain.Course;
-import com.example.demo.domain.CourseEnrollment;
-import com.example.demo.domain.enumeration.EnrollmaentStatus;
+import com.example.demo.domain.enumeration.EnrollmentStatus;
 import com.example.demo.dto.response.userDTO.ResUserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,7 +31,7 @@ public class ReponseCourseDTO {
         if(course.getTeacher()!=null){
             this.teacher= ResUserDTO.fromUser(course.getTeacher());
         }
-        this.studentCount = course.getEnrollments() != null ? course.getEnrollments().stream().filter(o-> o.getStatus()== EnrollmaentStatus.ACCEPTED).toList().size() : 0;
+        this.studentCount = course.getEnrollments() != null ? course.getEnrollments().stream().filter(o-> o.getStatus()== EnrollmentStatus.ACCEPTED).toList().size() : 0;
         this.assignmentCount = course.getAssignments() != null ? course.getAssignments().size() : 0;
     }
     public static ReponseCourseDTO fromCourse(Course course){return  new ReponseCourseDTO(course);}

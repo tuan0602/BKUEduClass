@@ -1,6 +1,6 @@
 package com.example.demo.domain.enumeration;
 
-public enum EnrollmaentStatus {
+public enum EnrollmentStatus {
         PENDING,
         ACCEPTED,
         REJECTED
