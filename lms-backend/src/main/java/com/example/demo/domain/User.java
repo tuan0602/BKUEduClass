@@ -63,6 +63,14 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String refreshToken;
 
+    public boolean isLocked() {
+        return locked;
+    }
+    
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+    
     @PrePersist
     protected void onCreate() {
         if (userId == null) {
