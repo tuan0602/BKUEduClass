@@ -57,7 +57,7 @@ public class CourseService {
             }
             /// ////Student thì lấy course đã đăng k thôi////
             /// ////Teacher thì lấy course của mình thôi////
-            if (user.getRole()!= Role.TEACHER) {
+            if (user.getRole()== Role.TEACHER) {
                 predicate = cb.and(predicate, cb.like(cb.lower(root.get("teacher").get("name")), "%" + user.getName() + "%"));
             }
             return predicate;

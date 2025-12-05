@@ -23,8 +23,11 @@ public class ReponseDetailCourseDTO {
         this.name=course.getName();
         this.description=course.getDescription();
         this.code=course.getCode();
-        this.teacher=ResUserDTO.fromUser(course.getTeacher());
         this.status=course.getStatus().name();
+        if(course.getTeacher()!=null){
+            this.teacher= ResUserDTO.fromUser(course.getTeacher());
+        }
+
     }
     public static ReponseDetailCourseDTO fromCourse(Course course){return  new ReponseDetailCourseDTO(course);}
 }
