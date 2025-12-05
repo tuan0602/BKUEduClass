@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Search, Trash2, Eye, Users, BookOpen, Loader2 } from 'lucide-react';
+import { Search, Trash2, Eye, Users, BookOpen, Loader2, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import {
   AlertDialog,
@@ -21,7 +21,8 @@ import { toast } from 'sonner';
 import {
   useCourses,
   useDeleteCourse,
-  useCreateCourse
+  useCreateCourse,
+  useUpdateCourse
 } from '../../hooks/useCourse';
 import { useTeachers } from "../../hooks/useUsers";
 import { ReponseCourseDTO } from '../../lib/courseService';
@@ -30,34 +31,37 @@ import { CourseStatus } from '../../lib/courseService';
 export function AdminCourses() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
+
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const [selectedCourse, setSelectedCourse] = useState<ReponseCourseDTO | null>(null);
 
-  // Create Form State
-  const [newCourse, setNewCourse] = useState({
+  // Form chung Create + Edit
+  const [courseForm, setCourseForm] = useState({
     code: "",
     name: "",
     description: "",
     teacherId: "",
+    status: CourseStatus.ACTIVE,
   });
 
   // Fetch courses
   const { data: coursesData, isLoading, error } = useCourses({
-    page: page,
+    page,
     size: 10,
     courseName: searchQuery,
   });
 
-  // Create course
+  // Mutations
   const { mutate: createCourse, isPending: isCreating } = useCreateCourse();
-  // Fetch teachers for dropdown
-  const { data: teachers = [], isLoading: isLoadingTeachers } = useTeachers();
-
-  // Delete course
+  const { mutate: updateCourse, isPending: isUpdating } = useUpdateCourse();
   const { mutate: deleteCourse, isPending: isDeleting } = useDeleteCourse();
+
+  // Fetch teachers
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useTeachers();
 
   const courses = coursesData?.result || [];
   const totalCourses = coursesData?.meta.totalElements || 0;
@@ -68,6 +72,72 @@ export function AdminCourses() {
     setPage(0);
   };
 
+  // Open create dialog
+  const handleOpenCreateDialog = () => {
+    setCourseForm({
+      code: "",
+      name: "",
+      description: "",
+      teacherId: "",
+      status: CourseStatus.ACTIVE,
+    });
+    setCreateDialogOpen(true);
+  };
+
+  // Open edit dialog
+  const handleOpenEditDialog = (course: ReponseCourseDTO) => {
+    setSelectedCourse(course);
+    setCourseForm({
+      code: course.code,
+      name: course.name,
+      description: course.description || "",
+      teacherId: course.teacher?.userId || "",
+      status: course.status as CourseStatus,
+    });
+    setEditDialogOpen(true);
+  };
+
+  // Create course
+  const handleCreateCourse = () => {
+    if (!courseForm.code || !courseForm.name) {
+      toast.error("Vui lòng nhập mã lớp và tên lớp");
+      return;
+    }
+
+    createCourse(
+      { ...courseForm, teacherId: String(courseForm.teacherId ?? "") },
+      {
+        onSuccess: () => {
+          toast.success("Tạo lớp học thành công");
+          setCreateDialogOpen(false);
+        }
+      }
+    );
+  };
+
+  // Update course
+  const handleUpdateCourse = () => {
+    if (!courseForm.code || !courseForm.name || !selectedCourse) {
+      toast.error("Vui lòng nhập mã lớp và tên lớp");
+      return;
+    }
+
+    updateCourse(
+      {
+        courseId: selectedCourse.id,
+        courseData: { ...courseForm, teacherId: String(courseForm.teacherId ?? "") }
+      },
+      {
+        onSuccess: () => {
+          toast.success("Cập nhật lớp học thành công");
+          setEditDialogOpen(false);
+          setSelectedCourse(null);
+        }
+      }
+    );
+  };
+
+  // Delete course
   const handleDeleteCourse = () => {
     if (!selectedCourse) return;
     deleteCourse(selectedCourse.id, {
@@ -77,34 +147,6 @@ export function AdminCourses() {
         toast.success("Đã xóa lớp học thành công");
       }
     });
-  };
-
-  const handleCreateCourse = () => {
-    if (!newCourse.code || !newCourse.name) {
-      toast.error("Vui lòng nhập mã lớp và tên lớp");
-      return;
-    }
-
-    createCourse(
-      {
-        ...newCourse,
-        teacherId: String(newCourse.teacherId ?? ""), // 👈 ép sang string
-        status: CourseStatus.ACTIVE,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Tạo lớp học thành công");
-          setCreateDialogOpen(false);
-
-          setNewCourse({
-            code: "",
-            name: "",
-            description: "",
-            teacherId: "",
-          });
-        }
-      }
-    );
   };
 
   // Loading
@@ -135,7 +177,7 @@ export function AdminCourses() {
           <h1>Quản lý lớp học</h1>
           <p className="text-muted-foreground">Xem và quản lý tất cả lớp học</p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>+ Tạo lớp học</Button>
+        <Button onClick={handleOpenCreateDialog}>+ Tạo lớp học</Button>
       </div>
 
       {/* Stats */}
@@ -242,19 +284,28 @@ export function AdminCourses() {
 
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => { setSelectedCourse(course); setDetailDialogOpen(true); }}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setSelectedCourse(course); setDetailDialogOpen(true); }}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
 
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive"
-                        onClick={() => { setSelectedCourse(course); setDeleteDialogOpen(true); }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={() => handleOpenEditDialog(course)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive"
+                          onClick={() => { setSelectedCourse(course); setDeleteDialogOpen(true); }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                   </TableCell>
 
                 </TableRow>
@@ -288,76 +339,6 @@ export function AdminCourses() {
 
         </CardContent>
       </Card>
-
-      {/* CREATE COURSE DIALOG */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Tạo lớp học</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-
-            <div>
-              <label className="text-sm font-medium">Mã lớp</label>
-              <Input
-                value={newCourse.code}
-                onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Tên lớp</label>
-              <Input
-                value={newCourse.name}
-                onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Mô tả</label>
-              <Input
-                value={newCourse.description}
-                onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-              />
-            </div>
-
-            <div>
-             <label className="text-sm font-medium">Giảng viên</label>
-
-                  {isLoadingTeachers ? (
-                    <div className="text-sm text-muted-foreground">Đang tải giảng viên...</div>
-                  ) : (
-                    <select
-                      className="w-full border rounded-md px-3 py-2"
-                      value={newCourse.teacherId}
-                      onChange={(e) =>
-                        setNewCourse({ ...newCourse, teacherId: e.target.value })
-                      }
-                    >
-                      <option value="">-- Chọn giảng viên --</option>
-
-                      {teachers.map((t) => (
-                        <option key={t.userId} value={t.userId}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3">
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Hủy</Button>
-
-              <Button onClick={handleCreateCourse} disabled={isCreating}>
-                {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Tạo lớp
-              </Button>
-            </div>
-
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* DELETE DIALOG */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -448,6 +429,83 @@ export function AdminCourses() {
 
         </DialogContent>
       </Dialog>
+
+      {/* CREATE + EDIT COURSE DIALOG */}
+      <Dialog open={createDialogOpen || editDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setCreateDialogOpen(false);
+          setEditDialogOpen(false);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editDialogOpen ? "Chỉnh sửa lớp học" : "Tạo lớp học"}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+
+            <div>
+              <label className="text-sm font-medium">Mã lớp</label>
+              <Input
+                value={courseForm.code}
+                onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Tên lớp</label>
+              <Input
+                value={courseForm.name}
+                onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Mô tả</label>
+              <Input
+                value={courseForm.description}
+                onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Giảng viên</label>
+              {isLoadingTeachers ? (
+                <div className="text-sm text-muted-foreground">Đang tải giảng viên...</div>
+              ) : (
+                <select
+                  className="w-full border rounded-md px-3 py-2"
+                  value={courseForm.teacherId}
+                  onChange={(e) => setCourseForm({ ...courseForm, teacherId: e.target.value })}
+                >
+                  <option value="">-- Chọn giảng viên --</option>
+                  {teachers.map((t) => (
+                    <option key={t.userId} value={t.userId}>{t.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3">
+              <Button
+                variant="outline"
+                onClick={() => { setCreateDialogOpen(false); setEditDialogOpen(false); }}
+              >
+                Hủy
+              </Button>
+
+              <Button
+                onClick={editDialogOpen ? handleUpdateCourse : handleCreateCourse}
+                disabled={isCreating || isUpdating}
+              >
+                {(isCreating || isUpdating) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {editDialogOpen ? "Cập nhật" : "Tạo lớp"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
