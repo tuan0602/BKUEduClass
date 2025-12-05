@@ -21,18 +21,13 @@ public class Document {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "courseId", nullable = false)
-    private Long courseId;
-
-    @Column(name = "uploadedBy", nullable = false)
-    private String uploadedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "courseId", insertable = false, updatable = false)
+    @JoinColumn(name = "courseId")
     private Course course;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploadedBy", insertable = false, updatable = false)
+    @JoinColumn(name = "uploadedBy")
     private User uploader;
 
     @NotBlank

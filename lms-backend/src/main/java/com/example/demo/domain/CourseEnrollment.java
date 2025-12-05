@@ -1,5 +1,6 @@
 package com.example.demo.domain;
 
+import com.example.demo.domain.enumeration.EnrollmaentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,18 +21,15 @@ public class CourseEnrollment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "courseId", nullable = false)
-    private Long courseId;
 
-    @Column(name = "studentId", nullable = false)
-    private String studentId;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "courseId", insertable = false, updatable = false)
+    @JoinColumn(name = "courseId")
     private Course course;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "studentId", insertable = false, updatable = false)
+    @JoinColumn(name = "studentId")
     private User student;
 
     @Column(name = "enrolledAt", nullable = false)
@@ -39,7 +37,7 @@ public class CourseEnrollment {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private EnrollmentStatus status;
+    private EnrollmaentStatus status;
 
     @PrePersist
     protected void onCreate() {
@@ -47,11 +45,9 @@ public class CourseEnrollment {
             enrolledAt = LocalDateTime.now();
         }
         if (status == null) {
-            status = EnrollmentStatus.ACTIVE;
+            status = EnrollmaentStatus.PENDING;
         }
     }
 
-    public enum EnrollmentStatus {
-        ACTIVE, DROPPED
-    }
+
 }
