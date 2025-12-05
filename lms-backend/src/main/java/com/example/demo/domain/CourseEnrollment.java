@@ -1,12 +1,10 @@
 package com.example.demo.domain;
 
-import com.example.demo.domain.enumeration.EnrollmaentStatus;
+import com.example.demo.domain.enumeration.EnrollmentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.example.demo.domain.User;
-import com.example.demo.domain.Course;
 
 import java.time.LocalDateTime;
 
@@ -37,7 +35,7 @@ public class CourseEnrollment {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private EnrollmaentStatus status;
+    private EnrollmentStatus status;
 
     @PrePersist
     protected void onCreate() {
@@ -45,7 +43,7 @@ public class CourseEnrollment {
             enrolledAt = LocalDateTime.now();
         }
         if (status == null) {
-            status = EnrollmaentStatus.PENDING;
+            status = EnrollmentStatus.PENDING;
         }
     }
 

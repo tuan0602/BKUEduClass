@@ -47,11 +47,14 @@ public class AuthController {
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
         //set thông tin người dùng đăng phập vào context
+        User user=authService.getUserByEmail(requestLoginDTO.getEmail());
+        if (user.isLocked()){
+            throw new CustomException("Tài khoản đã bị khóa");
+        }
         SecurityContextHolder.getContext().setAuthentication(authentication);
         //create a token
 
         ResLoginDTO resLoginDTO=new ResLoginDTO();
-        User user=authService.getUserByEmail(requestLoginDTO.getEmail());
 
         resLoginDTO.setUser(resLoginDTO.new UserLogin(user.getUserId(), user.getEmail(), user.getName(),user.getRole()));
         resLoginDTO.setRole(user.getRole());
