@@ -36,9 +36,10 @@ public class Course {
     private String code;
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "teacherId", nullable = true)
     @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JsonIgnore
     private User teacher;
 
     @Enumerated(EnumType.STRING)
@@ -79,6 +80,9 @@ public class Course {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     List<Document> documents;
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    List<Discussion> discussions;
 
 
 

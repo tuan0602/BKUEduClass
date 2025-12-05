@@ -1,14 +1,17 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.Course;
-import com.example.demo.domain.User;
+import com.example.demo.domain.*;
+import com.example.demo.domain.enumeration.EnrollmentStatus;
 import com.example.demo.domain.enumeration.Role;
 import com.example.demo.dto.request.course.CourseDTO;
 import com.example.demo.dto.response.courseDTO.ReponseCourseDTO;
 import com.example.demo.dto.response.courseDTO.ReponseDetailCourseDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
+import com.example.demo.repository.CourseEnrollmentRepository;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.UserRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +28,7 @@ import java.util.stream.Collectors;
 public class CourseService {
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
+    private final CourseEnrollmentRepository courseEnrollmentRepository;
 
     public Course createCourse(CourseDTO courseDTO) {
         Course course = new Course();
@@ -56,6 +61,18 @@ public class CourseService {
                 predicate = cb.and(predicate, cb.like(cb.lower(root.get("code")), "%" + courseCode.toLowerCase() + "%"));
             }
             /// ////Student thì lấy course đã đăng k thôi////
+            if (user.getRole() == Role.STUDENT) {
+                Join<Course, CourseEnrollment> joinEnroll =
+                        root.join("enrollments", JoinType.INNER);
+
+                predicate = cb.and(predicate,
+                        cb.equal(joinEnroll.get("student").get("id"),
+                                user.getUserId()));
+
+                predicate = cb.and(predicate,
+                        cb.equal(joinEnroll.get("status"),
+                                EnrollmentStatus.ACCEPTED));
+            }
             /// ////Teacher thì lấy course của mình thôi////
             if (user.getRole()== Role.TEACHER) {
                 predicate = cb.and(predicate, cb.like(cb.lower(root.get("teacher").get("name")), "%" + user.getName() + "%"));
@@ -86,13 +103,76 @@ public class CourseService {
         }
         //Xử lý logic khác
         /// ///Student thì kiểm tra đã đăng ký khóa học chưa////
+        if (user.getRole() == Role.STUDENT) {
+            boolean isEnrolled  = course.getEnrollments().stream()
+                    .filter(enrollment -> enrollment.getStatus() == EnrollmentStatus.ACCEPTED)
+                    .map(CourseEnrollment::getStudent)
+                    .anyMatch(student -> student.getUserId().equals(user.getUserId()));
+
+            if (!isEnrolled) {
+                throw new RuntimeException("You are not enrolled in this course");
+            }
+        }
         /// ///Teacher thì kiểm tra có phải giáo viên của khóa học không////
-        if (user.getRole()!= Role.TEACHER) {
+        if (user.getRole()== Role.TEACHER) {
             if (!course.getTeacher().getName().equals(user.getName())) {
                 throw new RuntimeException("You are not teacher of this course");
             }
         }
-        return ReponseDetailCourseDTO.fromCourse(course);
+        int totalAssignments=0;
+        int submittedAssignments=0;
+        int documentsCount=0;
+        int studentsCount=0;
+        double averageGrade=0;
+        int discussionsCount=0;
+        int submissionRate=0;
+        if (user.getRole()== Role.STUDENT) {
+            totalAssignments=course.getAssignments() != null ? course.getAssignments().size() : 0;
+            List< Submission> submissions =course.getAssignments().stream()
+                    .flatMap(a->a.getSubmissions().stream())
+                    .filter(s-> s.getStudent().getUserId().equals(user.getUserId()))
+                    .toList();
+            submittedAssignments=submissions.size();
+            discussionsCount=course.getDiscussions() != null ? course.getDiscussions().size() : 0;
+            studentsCount= course.getEnrollments() != null ? (int) course.getEnrollments().stream().filter(o-> o.getStatus()== EnrollmentStatus.ACCEPTED).count() : 0;
+            averageGrade= submissions.stream()
+                    .mapToDouble(Submission::getGrade)
+                    .average()
+                    .orElse(0.0);
+        }
+        if (user.getRole()== Role.TEACHER) {
+            totalAssignments= course.getAssignments() != null ? course.getAssignments().size() : 0;
+            documentsCount= course.getEnrollments() != null ? course.getEnrollments().size() : 0;
+            studentsCount= course.getEnrollments() != null ? (int) course.getEnrollments().stream().filter(o-> o.getStatus()== EnrollmentStatus.ACCEPTED).count() : 0;
+            List<Assignment> assignments= course.getAssignments();
+            if(totalAssignments==0) {
+                averageGrade=0;
+            } else {
+                DoubleSummaryStatistics stats = course.getAssignments().stream()
+                        .flatMap(a -> a.getSubmissions().stream())
+                        .mapToDouble(Submission -> Submission.getGrade())
+                        .summaryStatistics();
+                if (totalAssignments==0) {
+                    averageGrade=0;
+                    submissionRate=100;
+                }
+                else{
+                    averageGrade=stats.getAverage();
+                    int totalSubmissions= (int) course.getAssignments().stream()
+                            .flatMap(a -> a.getSubmissions().stream())
+                            .count();
+                    submissionRate= (int) ((double) totalSubmissions / (studentsCount * totalAssignments) * 100);
+                }
+            }
+
+        }
+        if (user.getRole()== Role.ADMIN) {
+            totalAssignments= course.getAssignments() != null ? course.getAssignments().size() : 0;
+            documentsCount= course.getEnrollments() != null ? course.getEnrollments().size() : 0;
+            discussionsCount=course.getDiscussions() != null ? course.getDiscussions().size() : 0;
+        }
+
+        return ReponseDetailCourseDTO.fromCourse(course, totalAssignments,submittedAssignments,documentsCount,studentsCount,averageGrade,discussionsCount, submissionRate);
     }
     public void deleteCourse(Long courseId) {
         Course course = courseRepository.findById(courseId).orElse(null);
