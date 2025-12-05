@@ -4,114 +4,191 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Search, Lock, Unlock, Trash2, Eye, Users, BookOpen } from 'lucide-react';
-import { DEMO_COURSES, COURSE_ENROLLMENTS, Course } from '../../lib/mockData';
+import { Search, Trash2, Eye, Users, BookOpen, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '../ui/alert-dialog';
 import { toast } from 'sonner';
 
+import {
+  useCourses,
+  useDeleteCourse,
+  useCreateCourse
+} from '../../hooks/useCourse';
+import { useTeachers } from "../../hooks/useUsers";
+import { ReponseCourseDTO } from '../../lib/courseService';
+import { CourseStatus } from '../../lib/courseService';
+
 export function AdminCourses() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [courses, setCourses] = useState(DEMO_COURSES.map(c => ({ ...c, isLocked: false })));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const filteredCourses = courses.filter(course =>
-    course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.teacherName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [selectedCourse, setSelectedCourse] = useState<ReponseCourseDTO | null>(null);
 
-  const toggleCourseLock = (courseId: string) => {
-    setCourses(courses.map(c => 
-      c.id === courseId ? { ...c, isLocked: !c.isLocked } : c
-    ));
-    const course = courses.find(c => c.id === courseId);
-    toast.success(course?.isLocked ? 'Đã mở khóa lớp học' : 'Đã khóa lớp học');
+  // Create Form State
+  const [newCourse, setNewCourse] = useState({
+    code: "",
+    name: "",
+    description: "",
+    teacherId: "",
+  });
+
+  // Fetch courses
+  const { data: coursesData, isLoading, error } = useCourses({
+    page: page,
+    size: 10,
+    courseName: searchQuery,
+  });
+
+  // Create course
+  const { mutate: createCourse, isPending: isCreating } = useCreateCourse();
+  // Fetch teachers for dropdown
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useTeachers();
+
+  // Delete course
+  const { mutate: deleteCourse, isPending: isDeleting } = useDeleteCourse();
+
+  const courses = coursesData?.result || [];
+  const totalCourses = coursesData?.meta.totalElements || 0;
+  const totalPages = coursesData?.meta.totalPages || 0;
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    setPage(0);
   };
 
   const handleDeleteCourse = () => {
     if (!selectedCourse) return;
-    setCourses(courses.filter(c => c.id !== selectedCourse.id));
-    setDeleteDialogOpen(false);
-    setSelectedCourse(null);
-    toast.success('Đã xóa lớp học thành công');
+    deleteCourse(selectedCourse.id, {
+      onSuccess: () => {
+        setDeleteDialogOpen(false);
+        setSelectedCourse(null);
+        toast.success("Đã xóa lớp học thành công");
+      }
+    });
   };
 
-  const openCourseDetail = (course: Course) => {
-    setSelectedCourse(course);
-    setDetailDialogOpen(true);
+  const handleCreateCourse = () => {
+    if (!newCourse.code || !newCourse.name) {
+      toast.error("Vui lòng nhập mã lớp và tên lớp");
+      return;
+    }
+
+    createCourse(
+      {
+        ...newCourse,
+        teacherId: String(newCourse.teacherId ?? ""), // 👈 ép sang string
+        status: CourseStatus.ACTIVE,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Tạo lớp học thành công");
+          setCreateDialogOpen(false);
+
+          setNewCourse({
+            code: "",
+            name: "",
+            description: "",
+            teacherId: "",
+          });
+        }
+      }
+    );
   };
 
-  const openDeleteDialog = (course: Course) => {
-    setSelectedCourse(course);
-    setDeleteDialogOpen(true);
-  };
+  // Loading
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Error
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-destructive text-lg mb-2">⚠️ Lỗi tải dữ liệu</div>
+        <div className="text-muted-foreground">{error.message}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1>Quản lý lớp học</h1>
-        <p className="text-muted-foreground">Xem và quản lý tất cả lớp học trong hệ thống</p>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1>Quản lý lớp học</h1>
+          <p className="text-muted-foreground">Xem và quản lý tất cả lớp học</p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>+ Tạo lớp học</Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Tổng lớp học</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Tổng lớp học</CardTitle></CardHeader>
+          <CardContent><div className="text-primary">{totalCourses}</div></CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Đang hoạt động</CardTitle></CardHeader>
           <CardContent>
-            <div className="text-primary">{courses.length}</div>
+            <div className="text-primary">
+              {courses.filter(c => c.status === "ACTIVE").length}
+            </div>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Đang hoạt động</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-primary">{courses.filter(c => !c.isLocked).length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Tổng sinh viên</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Tổng sinh viên</CardTitle></CardHeader>
           <CardContent>
             <div className="text-primary">
               {courses.reduce((sum, c) => sum + c.studentCount, 0)}
             </div>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">TB SV/lớp</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-sm">TB SV/lớp</CardTitle></CardHeader>
           <CardContent>
             <div className="text-primary">
-              {courses.length > 0 ? Math.round(courses.reduce((sum, c) => sum + c.studentCount, 0) / courses.length) : 0}
+              {courses.length > 0
+                ? Math.round(courses.reduce((sum, c) => sum + c.studentCount, 0) / courses.length)
+                : 0}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
+      {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Tìm kiếm lớp học..."
+          placeholder="Tìm kiếm lớp học theo tên..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           className="pl-10"
         />
       </div>
 
-      {/* Courses Table */}
+      {/* Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Danh sách lớp học ({filteredCourses.length})</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Danh sách lớp học ({courses.length})</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -119,185 +196,258 @@ export function AdminCourses() {
                 <TableHead>Mã lớp</TableHead>
                 <TableHead>Tên lớp</TableHead>
                 <TableHead>Giảng viên</TableHead>
-                <TableHead>Học kỳ</TableHead>
-                <TableHead>Số SV</TableHead>
-                <TableHead>Mã đăng ký</TableHead>
                 <TableHead>Trạng thái</TableHead>
+                <TableHead>Số SV</TableHead>
+                <TableHead>Bài tập</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {filteredCourses.map(course => (
+              {courses.map(course => (
                 <TableRow key={course.id}>
-                  <TableCell>{course.code}</TableCell>
-                  <TableCell>{course.name}</TableCell>
-                  <TableCell>{course.teacherName}</TableCell>
-                  <TableCell>{course.semester}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      <span>{course.studentCount}</span>
-                    </div>
+                    <code className="text-xs bg-gray-100 px-2 py-1 rounded">{course.code}</code>
                   </TableCell>
+
+                  <TableCell className="font-medium">{course.name}</TableCell>
+
                   <TableCell>
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded">{course.enrollmentCode}</code>
+                    {course.teacher?.name || <span className="text-muted-foreground italic">Chưa có giảng viên</span>}
                   </TableCell>
+
                   <TableCell>
-                    <Badge variant={course.isLocked ? 'destructive' : 'default'}>
-                      {course.isLocked ? 'Đã khóa' : 'Hoạt động'}
+                    <Badge variant={
+                      course.status === "ACTIVE" ? "default" :
+                        course.status === "INACTIVE" ? "secondary" : "outline"
+                    }>
+                      {course.status === "ACTIVE" ? "Hoạt động" :
+                        course.status === "INACTIVE" ? "Tạm ngưng" : "Lưu trữ"}
                     </Badge>
                   </TableCell>
+
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      {course.studentCount}
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <BookOpen className="w-4 h-4 text-muted-foreground" />
+                      {course.assignmentCount}
+                    </div>
+                  </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => openCourseDetail(course)}>
+                      <Button size="sm" variant="ghost" onClick={() => { setSelectedCourse(course); setDetailDialogOpen(true); }}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button 
-                        size="sm" 
+
+                      <Button
+                        size="sm"
                         variant="ghost"
-                        onClick={() => toggleCourseLock(course.id)}
-                        className={course.isLocked ? 'text-green-600' : 'text-orange-600'}
+                        className="text-destructive"
+                        onClick={() => { setSelectedCourse(course); setDeleteDialogOpen(true); }}
                       >
-                        {course.isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                      </Button>
-                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => openDeleteDialog(course)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
           </Table>
 
-          {filteredCourses.length === 0 && (
+          {courses.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               Không tìm thấy lớp học nào
             </div>
           )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">Trang {page + 1} / {totalPages}</div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" disabled={page === 0}
+                  onClick={() => setPage(p => Math.max(0, p - 1))}>
+                  Trước
+                </Button>
+
+                <Button size="sm" variant="outline" disabled={page === totalPages - 1}
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>
+                  Sau
+                </Button>
+              </div>
+            </div>
+          )}
+
         </CardContent>
       </Card>
 
-      {/* Course Details */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Lớp học theo giảng viên</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Array.from(new Set(courses.map(c => c.teacherName))).map(teacher => {
-                const teacherCourses = courses.filter(c => c.teacherName === teacher);
-                return (
-                  <div key={teacher} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <div>{teacher}</div>
-                      <div className="text-sm text-muted-foreground">{teacherCourses.length} lớp học</div>
-                    </div>
-                    <Badge>{teacherCourses.reduce((sum, c) => sum + c.studentCount, 0)} SV</Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+      {/* CREATE COURSE DIALOG */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Tạo lớp học</DialogTitle>
+          </DialogHeader>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lớp học theo học kỳ</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Array.from(new Set(courses.map(c => c.semester))).map(semester => {
-                const semesterCourses = courses.filter(c => c.semester === semester);
-                return (
-                  <div key={semester} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <div>{semester}</div>
-                      <div className="text-sm text-muted-foreground">{semesterCourses.length} lớp học</div>
-                    </div>
-                    <Badge>{semesterCourses.reduce((sum, c) => sum + c.studentCount, 0)} SV</Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="space-y-4">
 
-      {/* Course Detail Dialog */}
+            <div>
+              <label className="text-sm font-medium">Mã lớp</label>
+              <Input
+                value={newCourse.code}
+                onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Tên lớp</label>
+              <Input
+                value={newCourse.name}
+                onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Mô tả</label>
+              <Input
+                value={newCourse.description}
+                onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+              />
+            </div>
+
+            <div>
+             <label className="text-sm font-medium">Giảng viên</label>
+
+                  {isLoadingTeachers ? (
+                    <div className="text-sm text-muted-foreground">Đang tải giảng viên...</div>
+                  ) : (
+                    <select
+                      className="w-full border rounded-md px-3 py-2"
+                      value={newCourse.teacherId}
+                      onChange={(e) =>
+                        setNewCourse({ ...newCourse, teacherId: e.target.value })
+                      }
+                    >
+                      <option value="">-- Chọn giảng viên --</option>
+
+                      {teachers.map((t) => (
+                        <option key={t.userId} value={t.userId}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3">
+              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Hủy</Button>
+
+              <Button onClick={handleCreateCourse} disabled={isCreating}>
+                {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Tạo lớp
+              </Button>
+            </div>
+
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE DIALOG */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa lớp học</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa lớp "<strong>{selectedCourse?.name}</strong>"?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
+
+            <AlertDialogAction
+              disabled={isDeleting}
+              onClick={handleDeleteCourse}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang xóa...
+                </>
+              ) : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DETAIL DIALOG */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Chi tiết lớp học</DialogTitle>
           </DialogHeader>
+
           {selectedCourse && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center">
-                  <BookOpen className="w-8 h-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3>{selectedCourse.name}</h3>
+
+              <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+                <BookOpen className="w-12 h-12 text-primary" />
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedCourse.name}</h3>
                   <p className="text-sm text-muted-foreground">{selectedCourse.code}</p>
                 </div>
-                <Badge variant={selectedCourse.isLocked ? 'destructive' : 'default'}>
-                  {selectedCourse.isLocked ? 'Đã khóa' : 'Hoạt động'}
+                <Badge>
+                  {selectedCourse.status === "ACTIVE" ? "Hoạt động" :
+                    selectedCourse.status === "INACTIVE" ? "Tạm ngưng" :
+                      "Lưu trữ"}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Giảng viên</p>
-                  <p>{selectedCourse.teacherName}</p>
+                  <p className="text-sm text-muted-foreground">Giảng viên</p>
+                  <p className="font-medium">
+                    {selectedCourse.teacher?.name || "Chưa có"}
+                  </p>
                 </div>
+
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Học kỳ</p>
-                  <p>{selectedCourse.semester}</p>
+                  <p className="text-sm text-muted-foreground">Số sinh viên</p>
+                  <p className="font-medium">{selectedCourse.studentCount}</p>
                 </div>
+
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Số sinh viên</p>
-                  <p>{selectedCourse.studentCount} sinh viên</p>
+                  <p className="text-sm text-muted-foreground">Bài tập</p>
+                  <p className="font-medium">{selectedCourse.assignmentCount}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Mã đăng ký</p>
-                  <code className="text-sm bg-gray-100 px-2 py-1 rounded">{selectedCourse.enrollmentCode}</code>
-                </div>
+
               </div>
 
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Mô tả</p>
-                <p>{selectedCourse.description}</p>
+              {selectedCourse.description && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Mô tả</p>
+                  <p>{selectedCourse.description}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>Đóng</Button>
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>
-                  Đóng
-                </Button>
-              </div>
             </div>
           )}
+
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa lớp học</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa lớp học "{selectedCourse?.name}"? 
-              Hành động này không thể hoàn tác.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCourse} className="bg-destructive hover:bg-destructive/90">
-              Xóa
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
