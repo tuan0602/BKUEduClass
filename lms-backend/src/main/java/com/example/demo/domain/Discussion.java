@@ -21,11 +21,7 @@ public class Discussion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "courseId", nullable = false)
-    private Long courseId;
 
-    @Column(name = "createdBy", nullable = false)
-    private String createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "courseId", insertable = false, updatable = false)
