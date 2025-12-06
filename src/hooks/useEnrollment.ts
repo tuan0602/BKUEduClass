@@ -8,7 +8,8 @@ import {
   handleEnrollmentAction,
   getPendingEnrollments,
   getCourseEnrollments,
-  EnrollmentResponse
+  EnrollmentResponse,
+  getStudentCourses 
 } from '../lib/enrollment';
 
 /**
@@ -20,6 +21,14 @@ export const usePendingEnrollments = () => {
     queryFn: getPendingEnrollments,
     refetchInterval: 30000, // Auto refetch every 30 seconds
     staleTime: 10000, // Consider data stale after 10 seconds
+  });
+};
+
+
+export const useStudentCourses = () => {
+  return useQuery({
+    queryKey: ['student-courses'],
+    queryFn: getStudentCourses,
   });
 };
 

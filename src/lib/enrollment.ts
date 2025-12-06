@@ -1,6 +1,6 @@
 // src/lib/enrollment.ts
 import api from "./axios";
-
+import { Course } from "./courseService";
 export interface EnrollmentResponse {
   status: number;
   message: string;
@@ -32,6 +32,27 @@ export const enrollInCourse = async (enrollmentCode: string): Promise<Enrollment
   }
 };
 
+/**
+ * Get courses that student has enrolled (ACCEPTED status)
+ * GET /api/admin/enrolls?status=ACCEPTED
+ */
+export const getStudentCourses = async (): Promise<CourseEnrollment[]> => {
+  try {
+    const response = await api.get<ApiResponse<ResultPaginationDTO>>(
+      "/admin/enrolls",
+      {
+        params: {
+          status: "ACCEPTED",
+          page: 0,
+          size: 100
+        }
+      }
+    );
+    return response.data.data.result || [];
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+};
 /**
  * Admin accepts an enrollment request
  * PUT /api/courses/enroll/{id}/accept
@@ -82,33 +103,72 @@ export const handleEnrollmentAction = async (
 
 /**
  * Get all pending enrollment requests (Admin only)
- * GET /api/courses/enrollments/pending
+ * GET /api/admin/enrolls?status=PENDING
  */
 export const getPendingEnrollments = async (): Promise<CourseEnrollment[]> => {
   try {
-    const response = await api.get<ApiResponse<CourseEnrollment[]>>(
-      "/courses/enrollments/pending"
+    const response = await api.get<ApiResponse<ResultPaginationDTO>>(
+      "/admin/enrolls",
+      {
+        params: {
+          status: "PENDING",
+          page: 0,
+          size: 100 // Get all pending enrollments
+        }
+      }
     );
-    return response.data.data || [];
+    return response.data.data.result || [];
   } catch (error: any) {
     throw error.response?.data || error;
   }
 };
 
 /**
- * Get enrollments by course ID
- * GET /api/courses/{courseId}/enrollments
+ * Get enrollments with filters and pagination (Admin only)
+ * GET /api/admin/enrolls
+ * @param params - Filter parameters
  */
-export const getCourseEnrollments = async (courseId: number): Promise<CourseEnrollment[]> => {
+export const getEnrollments = async (params?: {
+  page?: number;
+  size?: number;
+  courseName?: string;
+  courseCode?: string;
+  studentName?: string;
+  status?: EnrollmentStatus;
+}): Promise<ResultPaginationDTO> => {
   try {
-    const response = await api.get<ApiResponse<CourseEnrollment[]>>(
-      `/courses/${courseId}/enrollments`
+    const response = await api.get<ApiResponse<ResultPaginationDTO>>(
+      "/admin/enrolls",
+      { params }
     );
-    return response.data.data || [];
+    return response.data.data;
   } catch (error: any) {
     throw error.response?.data || error;
   }
 };
+
+/**
+ * Get enrollments by course ID (if needed in future)
+ * This endpoint might need to be added in backend
+ */
+export const getCourseEnrollments = async (courseId: number): Promise<CourseEnrollment[]> => {
+  try {
+    const response = await api.get<ApiResponse<ResultPaginationDTO>>(
+      "/admin/enrolls",
+      {
+        params: {
+          courseId,
+          page: 0,
+          size: 100
+        }
+      }
+    );
+    return response.data.data.result || [];
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+};
+
 
 // Types for Course Enrollment Entity
 export enum EnrollmentStatus {
@@ -131,6 +191,16 @@ export interface CourseEnrollment {
   };
   enrolledAt: string;
   status: EnrollmentStatus;
+}
+
+export interface ResultPaginationDTO {
+  meta: {
+    currentPage: number;
+    pageSize: number;
+    totalPages: number;
+    totalElements: number;
+  };
+  result: CourseEnrollment[];
 }
 
 export interface ApiResponse<T> {

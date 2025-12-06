@@ -34,7 +34,7 @@ public class CourseEnrollment {
     private LocalDateTime enrolledAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, length = 20)
     private EnrollmentStatus status;
 
     @PrePersist

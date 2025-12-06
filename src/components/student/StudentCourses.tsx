@@ -1,4 +1,6 @@
-import { User } from '../../context/authContext';
+import { User } from '../../context/AuthContext';
+import { useEnrollInCourse } from '../../hooks/useEnrollment';
+import { useCourses } from '../../hooks/useCourse';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
@@ -6,7 +8,7 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
 import { BookOpen, Users, FileText, Plus, Search } from 'lucide-react';
-import { DEMO_COURSES, COURSE_ENROLLMENTS, Course } from '../../lib/mockData';
+import { Course } from '../../lib/mockData';
 import { Dialog, DialogContent, DialogDescription as DialogDesc, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
@@ -21,38 +23,37 @@ export function StudentCourses({ user  }: StudentCoursesProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [enrollmentCode, setEnrollmentCode] = useState('');
-  const [enrolledCourses, setEnrolledCourses] = useState(
-    DEMO_COURSES.filter(course => COURSE_ENROLLMENTS[course.id]?.includes(user.userId))
-  );
+  const { data: coursesData, isLoading} = useCourses({
+  page: 0,
+  size: 100,
+  });
 
-  const handleJoinCourse = () => {
-    if (!enrollmentCode.trim()) {
-      toast.error('Vui lòng nhập mã đăng ký');
-      return;
+const enrolledCourses = coursesData?.result || [];
+
+  const { mutate: enrollCourse, isPending: isEnrolling } = useEnrollInCourse();
+
+const handleJoinCourse = () => {
+  if (!enrollmentCode.trim()) {
+    toast.error('Vui lòng nhập mã đăng ký');
+    return;
+  }
+
+  enrollCourse(enrollmentCode.trim().toUpperCase(), {
+    onSuccess: () => {
+      setJoinDialogOpen(false);
+      setEnrollmentCode('');
+      // Toast đã được xử lý trong hook
+    },
+    onError: (error: any) => {
+      // Toast đã được xử lý trong hook
     }
-
-    const course = DEMO_COURSES.find(c => c.enrollmentCode === enrollmentCode.toUpperCase());
-    
-    if (!course) {
-      toast.error('Mã đăng ký không hợp lệ');
-      return;
-    }
-
-    if (enrolledCourses.some(c => c.id === course.id)) {
-      toast.error('Bạn đã tham gia lớp học này rồi');
-      return;
-    }
-
-    setEnrolledCourses([...enrolledCourses, course]);
-    setJoinDialogOpen(false);
-    setEnrollmentCode('');
-    toast.success(`Đã tham gia lớp học ${course.name} thành công!`);
-  };
+  });
+};
 
   const filteredCourses = enrolledCourses.filter(course =>
     course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.teacherName.toLowerCase().includes(searchQuery.toLowerCase())
+    course.teacher?.name?.toLowerCase().includes(searchQuery.toLowerCase() || '')
   );
 
   return (
@@ -96,9 +97,13 @@ export function StudentCourses({ user  }: StudentCoursesProps) {
               <Button variant="outline" onClick={() => setJoinDialogOpen(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleJoinCourse} className="bg-primary">
-                Đăng ký
-              </Button>
+              <Button 
+                  onClick={handleJoinCourse} 
+                  className="bg-primary"
+                  disabled={isEnrolling}
+                >
+                  {isEnrolling ? 'Đang gửi...' : 'Đăng ký'}
+                </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -116,7 +121,11 @@ export function StudentCourses({ user  }: StudentCoursesProps) {
       </div>
 
       {/* Course Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {isLoading ? (
+        <div className="text-center py-12">
+          <p>Đang tải...</p>
+        </div>
+      ) : (  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredCourses.map(course => {
           const progress = Math.floor(Math.random() * 40) + 60; // Mock progress
           
@@ -138,7 +147,7 @@ export function StudentCourses({ user  }: StudentCoursesProps) {
               </div>
               <CardHeader>
                 <CardTitle className="line-clamp-2">{course.name}</CardTitle>
-                <CardDescription>{course.teacherName}</CardDescription>
+                <CardDescription>{course.teacher?.name || 'Chưa có giảng viên'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -153,7 +162,7 @@ export function StudentCourses({ user  }: StudentCoursesProps) {
                       <Users className="w-4 h-4" />
                       <span>{course.studentCount} sinh viên</span>
                     </div>
-                    <span className="text-muted-foreground">{course.semester}</span>
+                    {/* <span className="text-muted-foreground">{course.semester}</span> */}
                   </div>
                 </div>
               </CardContent>
@@ -161,6 +170,7 @@ export function StudentCourses({ user  }: StudentCoursesProps) {
           );
         })}
       </div>
+      )}
 
       {filteredCourses.length === 0 && (
         <div className="text-center py-12">
