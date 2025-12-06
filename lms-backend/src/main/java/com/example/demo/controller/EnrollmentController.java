@@ -56,7 +56,7 @@ public class EnrollmentController {
         ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"Enroll refused successfully",null,null);
         return ResponseEntity.ok().body(response);
     }
-    @PutMapping("/admin/enrolls")
+    @GetMapping("/admin/enrolls")
     @PreAuthorize("hasAnyRole('ADMIN')")
     @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "GetListEnrolls", description = "Enroll the current student in a specified course")
