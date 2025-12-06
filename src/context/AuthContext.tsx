@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import api from "../lib/axios"; 
+import api from "../lib/axios";
+import { queryClient } from "../main";
 
 export interface User {
   userId: string;
@@ -116,6 +117,9 @@ const login = async (email: string, password: string) => {
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    // ✅ Clear toàn bộ React Query cache khi logout
+    // Điều này đảm bảo data của user cũ không còn trong cache khi login user mới
+    queryClient.clear();
   };
 
   return (
