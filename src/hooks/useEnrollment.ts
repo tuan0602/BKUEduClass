@@ -9,7 +9,8 @@ import {
   getPendingEnrollments,
   getCourseEnrollments,
   EnrollmentResponse,
-  getStudentCourses 
+  getStudentCourses,
+  getTeacherEnrollments,
 } from '../lib/enrollment';
 
 /**
@@ -244,5 +245,18 @@ export const useBatchEnrollmentAction = () => {
         description: error.message || 'Failed to process some enrollment requests',
       });
     },
+  });
+};
+
+
+/**
+ * Hook to fetch all enrollments for teacher
+ */
+export const useTeacherEnrollments = () => {
+  return useQuery({
+    queryKey: ['teacher-enrollments'],
+    queryFn: getTeacherEnrollments,
+    staleTime: 30000, // Cache 30 seconds
+    refetchInterval: 60000, // Auto refetch every 60 seconds
   });
 };
