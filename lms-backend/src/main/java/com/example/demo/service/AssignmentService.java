@@ -179,7 +179,6 @@ public class AssignmentService {
         assignment.setTitle(dto.getTitle());
         assignment.setDescription(dto.getDescription());
         assignment.setDueDate(dto.getDueDate());
-        assignment.setCourse(course);
         assignment.setStatus(dto.getStatus());
         List<CreateAssignmentDTO.QuestionDTO> questionDTOs = new ArrayList<CreateAssignmentDTO.QuestionDTO>();
         for (CreateAssignmentDTO.QuestionDTO questionDTO : dto.getQuestion()) {
