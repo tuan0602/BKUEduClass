@@ -6,8 +6,8 @@ import { AuthProvider } from "./context/AuthContext";
 import App from "./App";
 import "./index.css";
 
-// Tạo QueryClient instance
-const queryClient = new QueryClient({
+// Tạo QueryClient instance - export để dùng trong AuthContext
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
