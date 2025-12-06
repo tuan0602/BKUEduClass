@@ -4,11 +4,23 @@ import com.example.demo.domain.Course;
 import com.example.demo.domain.CourseEnrollment;
 import com.example.demo.domain.User;
 import com.example.demo.domain.enumeration.EnrollmentStatus;
+import com.example.demo.domain.enumeration.Role;
+import com.example.demo.dto.response.ResultPaginationDTO;
+import com.example.demo.dto.response.userDTO.ResUserDTO;
 import com.example.demo.repository.CourseEnrollmentRepository;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.UserRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,4 +57,42 @@ public class EnrolmentService {
         enrollment.setStatus(com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
         courseEnrollmentRepository.save(enrollment);
     }
+    public ResultPaginationDTO getEnrolls(Pageable pageable,String courseName,String courseCode,String studentName,EnrollmentStatus status,String userMail) {
+        User user=userRepository.findByEmail(userMail).orElse(null);
+        Specification<CourseEnrollment> spec = (root, query, cb) -> {
+            Predicate predicate = cb.conjunction(); // bắt đầu với điều kiện luôn đúng
+            //Nếu Có filter
+            if (courseName != null && !courseName.isEmpty()) {
+                predicate = cb.and(predicate, cb.like(cb.lower(root.get("course").get("name")), "%" + courseName.toLowerCase() + "%"));
+            }
+            if (courseCode != null && !courseCode.isEmpty()) {
+                predicate = cb.and(predicate, cb.like(cb.lower(root.get("course").get("code")), "%" + courseName.toLowerCase() + "%"));
+            }
+            if (studentName != null && !studentName.isEmpty()) {
+                predicate = cb.and(predicate, cb.like(cb.lower(root.get("student").get("name")), "%" + studentName.toLowerCase() + "%"));
+            }
+            if (status != null) {
+                predicate = cb.and(predicate,
+                        cb.equal(root.get("status"), status));
+            }
+
+            return predicate;
+        };
+        Page<CourseEnrollment> page= courseEnrollmentRepository.findAll(spec, pageable);
+        List<CourseEnrollment> result=page.getContent();
+
+        ResultPaginationDTO resultPaginationDTO=new ResultPaginationDTO();
+        ResultPaginationDTO.Meta mt=new ResultPaginationDTO.Meta();
+
+        mt.setCurrentPage(page.getNumber());
+        mt.setPageSize(page.getSize());
+        mt.setTotalPages(page.getTotalPages());
+        mt.setTotalElements(page.getNumberOfElements());
+
+        resultPaginationDTO.setMeta(mt);
+        resultPaginationDTO.setResult(result);
+        return resultPaginationDTO;
+    }
+
+
 }

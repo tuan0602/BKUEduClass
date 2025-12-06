@@ -1,12 +1,17 @@
 package com.example.demo.controller;
 
+import com.example.demo.domain.enumeration.EnrollmentStatus;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.service.CourseService;
 import com.example.demo.service.EnrolmentService;
 import com.example.demo.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,6 +54,23 @@ public class EnrollmentController {
                 .orElseThrow(()-> new RuntimeException("User not found"));
         enrolmentService.enrollAnswer("refuse", id);
         ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"Enroll refused successfully",null,null);
+        return ResponseEntity.ok().body(response);
+    }
+    @PutMapping("/admin/enrolls")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "GetListEnrolls", description = "Enroll the current student in a specified course")
+    public ResponseEntity<ApiResponse<ResultPaginationDTO>> getCourses(
+            @PageableDefault(size = 10,page=0,sort = "enrolledAt",direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) String courseName,
+            @RequestParam(required = false) String courseCode,
+            @RequestParam(required = false) String studentName,
+            @RequestParam(required = false) EnrollmentStatus status
+    ) {
+        String user = securityUtil.getCurrentUserLogin()
+                .orElseThrow(()-> new RuntimeException("User not found"));
+        ResultPaginationDTO paginationDTO=enrolmentService.getEnrolls(pageable,courseName,courseCode,studentName,status,user);
+        ApiResponse<ResultPaginationDTO> response=new ApiResponse<>(HttpStatus.OK,"get successful",paginationDTO,null);
         return ResponseEntity.ok().body(response);
     }
 }
