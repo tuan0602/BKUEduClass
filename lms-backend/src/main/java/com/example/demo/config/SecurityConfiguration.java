@@ -47,7 +47,7 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints (including OpenAPI/Swagger)
-                        .requestMatchers("/","/api/auth/**", "/api/oauth2/**", "/api/error").permitAll()
+                        .requestMatchers("/","/api/auth/**", "/api/oauth2/**", "/api/error","/file/**").permitAll()
                         // Auth endpoints for manual OAuth2 flow
                         // Swagger/OpenAPI endpoints - public access
                         .requestMatchers(
