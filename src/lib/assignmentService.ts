@@ -1,19 +1,25 @@
-// src/services/assignmentService.ts
-import api from '../lib/axios';
+// src/lib/assignmentService.ts
+import api from "./axios";
 
-export enum Answer {
-  A = 'A',
-  B = 'B',
-  C = 'C',
-  D = 'D'
-}
+// ===========================
+// ENUMS
+// ===========================
 
 export enum StatusAssignment {
-  PENDING = 'PENDING',
-  ACTIVE = 'ACTIVE',
-  COMPLETED = 'COMPLETED',
-  CLOSED = 'CLOSED'
+  DRAFT = "DRAFT",
+  PUBLISHED = "PUBLISHED",
 }
+
+export enum Answer {
+  A = "A",
+  B = "B",
+  C = "C",
+  D = "D",
+}
+
+// ===========================
+// INTERFACES / TYPES
+// ===========================
 
 export interface QuestionDTO {
   question: string;
@@ -27,33 +33,53 @@ export interface QuestionDTO {
 export interface CreateAssignmentDTO {
   courseId: number;
   title: string;
-  description: string;
-  dueDate: string; // ISO 8601 format: "2024-12-31T23:59:00"
-  status?: StatusAssignment;
+  description?: string;
+  dueDate: string; // ISO format: "2024-12-31T23:59:59"
+  status: StatusAssignment;
   question: QuestionDTO[];
 }
 
 export interface Assignment {
   id: number;
-  courseId: number;
   title: string;
-  description: string;
+  description?: string;
   dueDate: string;
-  status: StatusAssignment;
   createdAt: string;
   updatedAt: string;
-  question?: QuestionDTO[];
+  status: StatusAssignment;
 }
 
-export interface ApiResponse<T> {
-  statusCode: number;
-  message: string;
-  data: T;
-  error: any;
+export interface QuestionForStudentDTO {
+  questionId: number;
+  question: string;
+  answerA: string;
+  answerB: string;
+  answerC: string;
+  answerD: string;
+}
+
+export interface AssignmentForStudentDTO {
+  id: number;
+  title: string;
+  description?: string;
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
+  question: QuestionForStudentDTO[];
+}
+
+export interface AssignmentListItem {
+  id: number;
+  title: string;
+  description?: string;
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
+  status: StatusAssignment;
 }
 
 export interface PaginationMeta {
-  currentPage: number;
+  page: number;
   pageSize: number;
   totalPages: number;
   totalElements: number;
@@ -61,75 +87,118 @@ export interface PaginationMeta {
 
 export interface ResultPaginationDTO {
   meta: PaginationMeta;
-  result: Assignment[];
+  result: AssignmentListItem[];
 }
 
-// ============== ASSIGNMENT SERVICE ==============
+export interface ApiResponse<T> {
+  statusCode: number;
+  message: string;
+  data: T;
+  error: string | null;
+}
 
-/**
- * Tạo assignment mới (Quiz hoặc bài tập thông thường)
- */
-export const createAssignment = async (data: CreateAssignmentDTO): Promise<Assignment> => {
-  const response = await api.post<ApiResponse<Assignment>>('/teacher/assignments', data);
-  return response.data.data;
+export interface GetAssignmentsParams {
+  page?: number;
+  size?: number;
+  sort?: string;
+  title?: string;
+}
+
+// ===========================
+// ASSIGNMENT SERVICE
+// ===========================
+
+const assignmentService = {
+  /**
+   * POST /api/teacher/assignments
+   * Tạo assignment mới (TEACHER only)
+   * Requires: Bearer Token + TEACHER role
+   */
+  createAssignment: async (
+    assignmentData: CreateAssignmentDTO
+  ): Promise<Assignment> => {
+    const response = await api.post<ApiResponse<Assignment>>(
+      "/teacher/assignments",
+      assignmentData
+    );
+    return response.data.data;
+  },
+
+  /**
+   * GET /api/assignments/course/{courseId}
+   * Lấy danh sách assignments theo courseId với pagination
+   * Cho cả TEACHER và STUDENT
+   */
+  getAssignmentsByCourseId: async (
+    courseId: number,
+    params?: GetAssignmentsParams
+  ): Promise<ResultPaginationDTO> => {
+    const response = await api.get<ApiResponse<ResultPaginationDTO>>(
+      `/assignments/course/${courseId}`,
+      {
+        params: {
+          page: params?.page || 0,
+          size: params?.size || 10,
+          sort: params?.sort || "createdAt,asc",
+          title: params?.title,
+        },
+      }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * GET /api/teacher/assignments/{assignmentId}
+   * Lấy chi tiết assignment (TEACHER only)
+   * Requires: Bearer Token + TEACHER role
+   */
+  getAssignmentDetail: async (assignmentId: number): Promise<Assignment> => {
+    const response = await api.get<ApiResponse<Assignment>>(
+      `/teacher/assignments/${assignmentId}`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * GET /api/student/assignments/{assignmentId}
+   * Lấy chi tiết assignment cho STUDENT (không có đáp án đúng)
+   * Requires: Bearer Token + STUDENT role
+   */
+  getAssignmentDetailForStudent: async (
+    assignmentId: number
+  ): Promise<AssignmentForStudentDTO> => {
+    const response = await api.get<ApiResponse<AssignmentForStudentDTO>>(
+      `/student/assignments/${assignmentId}`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * PUT /api/teacher/assignments/{assignmentId}
+   * Cập nhật assignment (TEACHER only)
+   * Requires: Bearer Token + TEACHER role
+   */
+  updateAssignment: async (
+    assignmentId: number,
+    assignmentData: CreateAssignmentDTO
+  ): Promise<Assignment> => {
+    const response = await api.put<ApiResponse<Assignment>>(
+      `/teacher/assignments/${assignmentId}`,
+      assignmentData
+    );
+    return response.data.data;
+  },
+
+  /**
+   * DELETE /api/teacher/assignments/{assignmentId}
+   * Xóa assignment (TEACHER only)
+   * Requires: Bearer Token + TEACHER role
+   */
+  deleteAssignment: async (assignmentId: number): Promise<void> => {
+    await api.delete<ApiResponse<void>>(
+      `/teacher/assignments/${assignmentId}`
+    );
+  },
 };
 
-/**
- * Lấy danh sách assignment theo courseId (có phân trang)
- */
-export const getAssignmentsByCourse = async (
-  courseId: number,
-  page: number = 0,
-  size: number = 10,
-  title?: string
-): Promise<ResultPaginationDTO> => {
-  const params: any = { page, size };
-  if (title) params.title = title;
-  
-  const response = await api.get<ApiResponse<ResultPaginationDTO>>(
-    `/assignments/course/${courseId}`,
-    { params }
-  );
-  return response.data.data;
-};
-
-/**
- * Lấy chi tiết assignment (cho giáo viên)
- */
-export const getAssignmentDetail = async (assignmentId: number): Promise<Assignment> => {
-  const response = await api.get<ApiResponse<Assignment>>(
-    `/teacher/assignments/${assignmentId}`
-  );
-  return response.data.data;
-};
-
-/**
- * Cập nhật assignment
- */
-export const updateAssignment = async (
-  assignmentId: number,
-  data: CreateAssignmentDTO
-): Promise<Assignment> => {
-  const response = await api.put<ApiResponse<Assignment>>(
-    `/teacher/assignments/${assignmentId}`,
-    data
-  );
-  return response.data.data;
-};
-
-/**
- * Xóa assignment
- */
-export const deleteAssignment = async (assignmentId: number): Promise<void> => {
-  await api.delete(`/teacher/assignments/${assignmentId}`);
-};
-
-/**
- * Lấy chi tiết assignment (cho sinh viên)
- */
-export const getAssignmentDetailForStudent = async (assignmentId: number): Promise<any> => {
-  const response = await api.get<ApiResponse<any>>(
-    `/student/assignments/${assignmentId}`
-  );
-  return response.data.data;
-};
+export default assignmentService;
