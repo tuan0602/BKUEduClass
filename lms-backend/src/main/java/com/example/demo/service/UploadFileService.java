@@ -1,43 +1,45 @@
-package com.example.demo.controller;
+package com.example.demo.service;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.core.sync.RequestBody;
 
 import java.io.IOException;
-@RestController
-@RequestMapping("/file")
-public class FileController {
+import java.util.Random;
 
+@Service
+@RequiredArgsConstructor
+public class UploadFileService {
     private final S3Client s3Client;
-
     @Value("${aws.s3.bucket}")
     private String bucketName;
 
-    public FileController(S3Client s3Client) {
-        this.s3Client = s3Client;
-    }
+    public String uploadFile(MultipartFile file, String folder) throws IOException {
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String uploadFile(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("folder") String folder // tên thư mục trong bucket
-    ) throws IOException {
-        String key = folder + "/" + file.getOriginalFilename(); // key = "folder/filename"
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+
+        // Sinh tên file mới: timestamp + random + extension
+        int random = new Random().nextInt(10000); // 0 -> 9999
+        String uniqueFilename = System.currentTimeMillis() + "_" + random + extension;
+
+        // Key trong S3 = folder + "/" + tên file duy nhất
+        String key = folder + "/" + uniqueFilename;
+
         s3Client.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucketName)
@@ -45,12 +47,10 @@ public class FileController {
                         .build(),
                 RequestBody.fromBytes(file.getBytes())
         );
-        return "Uploaded: " + key;
+
+        return uniqueFilename;
     }
-    @GetMapping("/download/{folder}/{filename}")
-    public ResponseEntity<byte[]> downloadFile(
-            @PathVariable String folder,
-            @PathVariable String filename
+    public ResponseEntity<byte[]> downloadFile(String folder, String filename
     ) {
         String key = folder + "/" + filename;
         try {
@@ -70,11 +70,8 @@ public class FileController {
             return ResponseEntity.status(404).body(null);
         }
     }
-    @DeleteMapping("/delete/{folder}/{filename}")
-    public ResponseEntity<String> deleteFile(
-            @PathVariable String folder,
-            @PathVariable String filename
-    ) {
+    public ResponseEntity<String> deleteFile(String folder,String filename)
+    {
         String key = folder + "/" + filename;
         try {
             // Kiểm tra file tồn tại trước (tùy chọn)
@@ -94,5 +91,4 @@ public class FileController {
             return ResponseEntity.status(500).body("Error deleting file: " + e.getMessage());
         }
     }
-
 }
