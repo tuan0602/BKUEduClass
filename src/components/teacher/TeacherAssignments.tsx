@@ -55,8 +55,6 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     .filter(course => course.teacher?.userId === user.userId)
     .map(course => course.id) || [];
 
-  console.log('📌 My course IDs:', myCourseIds);
-
   // Fetch assignments từ tất cả courses
   const courseIds = myCourseIds;
 
