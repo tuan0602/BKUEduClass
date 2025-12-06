@@ -38,15 +38,14 @@ export const useAssignmentsByCourse = (
   params?: GetAssignmentsParams,
   enabled: boolean = true
 ) => {
+  const queryParams = params || {};
+  
   const query = useQuery<ResultPaginationDTO, Error>({
-    queryKey: assignmentKeys.list(courseId, params || {}),
-    queryFn: () => assignmentService.getAssignmentsByCourseId(courseId, params),
+    queryKey: assignmentKeys.list(courseId, queryParams),
+    queryFn: () => assignmentService.getAssignmentsByCourseId(courseId, queryParams),
     enabled: enabled && courseId > 0,
-    staleTime: 1000 * 60 * 3, // Cache 3 phút
+    staleTime: 1000 * 60 * 3,
   });
-
-  console.log("📌 useAssignmentsByCourse -> data:", query.data);
-  console.log("📌 useAssignmentsByCourse -> error:", query.error);
 
   return query;
 };
@@ -189,4 +188,14 @@ export const usePrefetchAssignmentDetail = () => {
       });
     }
   };
+};
+
+// ===========================
+// FETCHER FUNCTIONS
+// ===========================
+export const fetchAssignmentsByCourse = async (
+  courseId: number,
+  params: GetAssignmentsParams = {}
+) => {
+  return assignmentService.getAssignmentsByCourseId(courseId, params);
 };

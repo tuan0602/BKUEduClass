@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -9,7 +9,9 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { useCourses } from '../../hooks/useCourse';
 
+export type CorrectAnswer = "A" | "B" | "C" | "D";
 interface Question {
   id: number;
   question: string;
@@ -17,26 +19,52 @@ interface Question {
   answerB: string;
   answerC: string;
   answerD: string;
-  correctAnswer: 'A' | 'B' | 'C' | 'D';
-}
-
-interface Course {
-  id: string;
-  name: string;
-  code?: string;
-  teacherId?: string;
-  [key: string]: any;
+  correctAnswer: CorrectAnswer;
 }
 
 interface QuizAssignmentCreatorProps {
-  myCourses: Course[];
   onSubmit: (data: any) => void;
   onCancel: () => void;
   submitRef?: React.MutableRefObject<(() => void) | null>;
+  teacherId?: string;
+  initialData?: any; // ⭐ HỖ TRỢ EDIT
 }
+export const emptyQuestion: Question = {
+  id: Date.now(),
+  question: "",
+  answerA: "",
+  answerB: "",
+  answerC: "",
+  answerD: "",
+  correctAnswer: "A", // literal ✔
+};
 
-export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef }: QuizAssignmentCreatorProps) {
+export function QuizAssignmentCreator({
+  onSubmit,
+  onCancel,
+  submitRef,
+  teacherId,
+  initialData
+}: QuizAssignmentCreatorProps) {
 
+  // ===========================
+  // LOAD COURSES
+  // ===========================
+  const { data: coursesData, isLoading: isLoadingCourses, error: coursesError } = useCourses({
+    size: 100,
+  });
+
+  const myCourses = coursesData?.result
+    .filter(course => !teacherId || course.teacher?.userId === teacherId)
+    .map(course => ({
+      id: course.id.toString(),
+      name: course.name,
+      code: course.code,
+    })) || [];
+
+  // ===========================
+  // STATE
+  // ===========================
   const [formData, setFormData] = useState({
     courseId: '',
     title: '',
@@ -45,25 +73,58 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
   });
 
   const [questions, setQuestions] = useState<Question[]>([]);
+
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const [currentQuestion, setCurrentQuestion] = useState<Question>({
-    id: Date.now(),
-    question: '',
-    answerA: '',
-    answerB: '',
-    answerC: '',
-    answerD: '',
-    correctAnswer: 'A'
-  });
 
+  const [currentQuestion, setCurrentQuestion] = useState<Question>(emptyQuestion);
+
+  // ======================================================
+  // ⭐ PREFILL EDIT MODE
+  // ======================================================
+useEffect(() => {
+  if (initialData) {
+    setFormData({
+      courseId: initialData.courseId?.toString() || "",
+      title: initialData.title || "",
+      description: initialData.description || "",
+      dueDate: initialData.dueDate ? initialData.dueDate.slice(0, 16) : ""
+    });
+
+    setQuestions(
+      (initialData.questions || []).map((q: any) => ({
+        id: q.id || Date.now() + Math.random(),
+        question: q.question,
+        answerA: q.answerA,
+        answerB: q.answerB,
+        answerC: q.answerC,
+        answerD: q.answerD,
+        correctAnswer: q.correctAnswer as CorrectAnswer,
+      }))
+    );
+  } else {
+    setFormData({
+      courseId: '',
+      title: '',
+      description: '',
+      dueDate: ''
+    });
+
+    setQuestions([]);
+  }
+}, [initialData]);
+
+  // ===========================
+  // EXPOSE SUBMIT TO PARENT
+  // ===========================
   useEffect(() => {
-    if (submitRef) {
-      submitRef.current = handleSubmit;
-    }
+    if (submitRef) submitRef.current = handleSubmit;
   }, [formData, questions]);
 
+  // ===========================
+  // HANDLERS
+  // ===========================
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -77,15 +138,7 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
       setCurrentQuestion({ ...questions[index] });
       setEditingIndex(index);
     } else {
-      setCurrentQuestion({
-        id: Date.now(),
-        question: '',
-        answerA: '',
-        answerB: '',
-        answerC: '',
-        answerD: '',
-        correctAnswer: 'A'
-      });
+      setCurrentQuestion({ ...emptyQuestion, id: Date.now() });
       setEditingIndex(null);
     }
     setShowQuestionModal(true);
@@ -94,15 +147,7 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
   const closeQuestionModal = () => {
     setShowQuestionModal(false);
     setEditingIndex(null);
-    setCurrentQuestion({
-      id: Date.now(),
-      question: '',
-      answerA: '',
-      answerB: '',
-      answerC: '',
-      answerD: '',
-      correctAnswer: 'A'
-    });
+    setCurrentQuestion({ ...emptyQuestion, id: Date.now() });
   };
 
   const saveQuestion = () => {
@@ -110,9 +155,14 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
       toast.error('Vui lòng nhập câu hỏi');
       return;
     }
-    if (!currentQuestion.answerA.trim() || !currentQuestion.answerB.trim() ||
-        !currentQuestion.answerC.trim() || !currentQuestion.answerD.trim()) {
-      toast.error('Vui lòng nhập đầy đủ 4 đáp án');
+
+    if (
+      !currentQuestion.answerA.trim() ||
+      !currentQuestion.answerB.trim() ||
+      !currentQuestion.answerC.trim() ||
+      !currentQuestion.answerD.trim()
+    ) {
+      toast.error("Vui lòng nhập đầy đủ 4 đáp án");
       return;
     }
 
@@ -120,10 +170,10 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
       const updated = [...questions];
       updated[editingIndex] = currentQuestion;
       setQuestions(updated);
-      toast.success('Đã cập nhật câu hỏi');
+      toast.success("Đã cập nhật câu hỏi");
     } else {
       setQuestions([...questions, currentQuestion]);
-      toast.success('Đã thêm câu hỏi');
+      toast.success("Đã thêm câu hỏi");
     }
 
     closeQuestionModal();
@@ -131,56 +181,93 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
 
   const deleteQuestion = (index: number) => {
     setQuestions(questions.filter((_, i) => i !== index));
-    toast.success('Đã xóa câu hỏi');
+    toast.success("Đã xóa câu hỏi");
   };
 
   const handleSubmit = () => {
     if (!formData.courseId || !formData.title || !formData.dueDate) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
 
     if (questions.length === 0) {
-      toast.error('Vui lòng thêm ít nhất 1 câu hỏi');
+      toast.error("Phải có ít nhất 1 câu hỏi");
       return;
     }
 
     const payload = {
-      courseId: formData.courseId,
-      title: formData.title,
-      description: formData.description,
-      dueDate: formData.dueDate,
-      questions: questions.map(q => ({
-        question: q.question,
-        answerA: q.answerA,
-        answerB: q.answerB,
-        answerC: q.answerC,
-        answerD: q.answerD,
-        correctAnswer: q.correctAnswer
-      }))
-    };
+  courseId: formData.courseId,
+  title: formData.title,
+  description: formData.description,
+  dueDate: formData.dueDate,
+  status: initialData ? initialData.status : "DRAFT",   // nếu cần status
 
-    console.log('POST /api/teacher/assignments', payload);
+  question: questions.map(q => ({
+    question: q.question,
+    answerA: q.answerA,
+    answerB: q.answerB,
+    answerC: q.answerC,
+    answerD: q.answerD,
+    correctAnswer: q.correctAnswer
+  }))
+};
+
     onSubmit(payload);
   };
+
+  // ===========================
+  // UI
+  // ===========================
+  if (isLoadingCourses) {
+    return (
+      <div className="space-y-6 py-4">
+        <div className="text-center py-12">
+          <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Đang tải danh sách lớp...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (coursesError) {
+    return (
+      <div className="space-y-6 py-4">
+        <div className="text-center py-12">
+          <p className="text-destructive">Có lỗi khi tải lớp học</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Thử lại
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (myCourses.length === 0) {
+    return (
+      <div className="space-y-6 py-4">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Bạn chưa có lớp để tạo bài kiểm tra</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 py-4">
 
-      {/* ---------------- FORM THÔNG TIN ---------------- */}
+      {/* FORM */}
       <div className="space-y-4">
-        
         <div className="space-y-2">
           <Label>Lớp học *</Label>
           <Select
             value={formData.courseId}
             onValueChange={(value) => handleInputChange('courseId', value)}
           >
-            <SelectTrigger><SelectValue placeholder="Chọn lớp học" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
             <SelectContent>
               {myCourses.map(course => (
                 <SelectItem key={course.id} value={course.id}>
-                  {course.name}
+                  {course.code ? `${course.code} - ${course.name}` : course.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -190,18 +277,18 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
         <div className="space-y-2">
           <Label>Tiêu đề *</Label>
           <Input
-            placeholder="VD: Kiểm tra giữa kỳ"
             value={formData.title}
             onChange={(e) => handleInputChange('title', e.target.value)}
+            placeholder="VD: Bài kiểm tra chương 1"
           />
         </div>
 
         <div className="space-y-2">
           <Label>Mô tả</Label>
           <Textarea
-            placeholder="Mô tả bài kiểm tra..."
             value={formData.description}
             onChange={(e) => handleInputChange('description', e.target.value)}
+            placeholder="Nhập mô tả..."
           />
         </div>
 
@@ -213,13 +300,11 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
             onChange={(e) => handleInputChange('dueDate', e.target.value)}
           />
         </div>
-
       </div>
 
-      {/* ---------------- DANH SÁCH QUESTION ---------------- */}
+      {/* QUESTIONS */}
       <div className="space-y-4">
-
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <div>
             <h3 className="font-semibold text-lg">Câu hỏi</h3>
             <p className="text-sm text-muted-foreground">
@@ -233,22 +318,20 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
           </Button>
         </div>
 
-        {/* --- FIX SCROLL: toàn bộ danh sách được cuộn --- */}
         <div className="border rounded-lg bg-gray-50 p-3">
           <div className="max-h-[350px] overflow-y-auto pr-2 space-y-3">
-
             {questions.length === 0 ? (
               <Card className="border-dashed">
                 <CardContent className="py-6 text-center text-muted-foreground">
-                  Chưa có câu hỏi nào. Nhấn "Thêm câu hỏi" để bắt đầu.
+                  Chưa có câu hỏi
                 </CardContent>
               </Card>
             ) : (
               questions.map((q, index) => (
                 <Card key={q.id}>
                   <CardContent className="pt-3 pb-3">
-                    
-                    <div className="flex items-start justify-between mb-2">
+
+                    <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <Badge variant="outline">Câu {index + 1}</Badge>
@@ -260,20 +343,11 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
                       </div>
 
                       <div className="flex gap-1">
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => openQuestionModal(index)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => openQuestionModal(index)}>
                           <Edit2 className="w-4 h-4" />
                         </Button>
 
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => deleteQuestion(index)}
-                          className="text-destructive"
-                        >
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteQuestion(index)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -282,12 +356,13 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {(['A','B','C','D'] as const).map(letter => {
                         const value = q[`answer${letter}` as keyof Question] as string;
-                        const active = q.correctAnswer === letter;
+                        const isCorrect = q.correctAnswer === letter;
+
                         return (
-                          <div 
+                          <div
                             key={letter}
                             className={`p-2 rounded border ${
-                              active ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'
+                              isCorrect ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'
                             }`}
                           >
                             <span className="font-semibold">{letter}.</span> {value}
@@ -300,20 +375,19 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
                 </Card>
               ))
             )}
-
           </div>
         </div>
       </div>
 
-      {/* ---------------- MODAL QUESTION ---------------- */}
+      {/* MODAL QUESTION */}
       <Dialog open={showQuestionModal} onOpenChange={setShowQuestionModal}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingIndex !== null ? 'Chỉnh sửa câu hỏi' : 'Thêm câu hỏi mới'}
+              {editingIndex !== null ? "Chỉnh sửa câu hỏi" : "Thêm câu hỏi"}
             </DialogTitle>
             <DialogDescription>
-              Nhập nội dung và đáp án cho câu hỏi trắc nghiệm.
+              Nhập nội dung câu hỏi và các đáp án.
             </DialogDescription>
           </DialogHeader>
 
@@ -330,14 +404,12 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
             </div>
 
             <div className="space-y-3">
-              {[ 'A', 'B', 'C', 'D' ].map(letter => (
+              {['A','B','C','D'].map(letter => (
                 <div key={letter} className="space-y-2">
                   <Label>Đáp án {letter} *</Label>
                   <Input
                     value={currentQuestion[`answer${letter}` as keyof Question] as string}
-                    onChange={(e) =>
-                      handleQuestionChange(`answer${letter}`, e.target.value)
-                    }
+                    onChange={(e) => handleQuestionChange(`answer${letter}`, e.target.value)}
                     placeholder={`Nhập đáp án ${letter}`}
                   />
                 </div>
@@ -348,7 +420,7 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
               <Label>Đáp án đúng *</Label>
               <Select
                 value={currentQuestion.correctAnswer}
-                onValueChange={(value: 'A' | 'B' | 'C' | 'D') =>
+                onValueChange={(value: Question['correctAnswer']) =>
                   handleQuestionChange('correctAnswer', value)
                 }
               >
@@ -367,7 +439,7 @@ export function QuizAssignmentCreator({ myCourses, onSubmit, onCancel, submitRef
           <DialogFooter>
             <Button variant="outline" onClick={closeQuestionModal}>Hủy</Button>
             <Button onClick={saveQuestion}>
-              {editingIndex !== null ? 'Cập nhật' : 'Thêm'}
+              {editingIndex !== null ? "Cập nhật" : "Thêm"}
             </Button>
           </DialogFooter>
         </DialogContent>
