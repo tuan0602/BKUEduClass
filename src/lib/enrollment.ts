@@ -209,3 +209,24 @@ export interface ApiResponse<T> {
   data: T;
   error: any;
 }
+
+/**
+ * Get all enrollments for teacher's courses
+ * GET /api/admin/enrolls
+ */
+export const getTeacherEnrollments = async (): Promise<ResultPaginationDTO> => {
+  try {
+    const response = await api.get<ApiResponse<ResultPaginationDTO>>(
+      "/admin/enrolls",
+      {
+        params: {
+          page: 0,
+          size: 1000 // Lấy nhiều để đảm bảo có đủ data
+        }
+      }
+    );
+    return response.data.data;
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+};

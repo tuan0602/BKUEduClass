@@ -57,7 +57,7 @@ public class EnrollmentController {
         return ResponseEntity.ok().body(response);
     }
     @GetMapping("/admin/enrolls")
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "GetListEnrolls", description = "Enroll the current student in a specified course")
     public ResponseEntity<ApiResponse<ResultPaginationDTO>> getCourses(
