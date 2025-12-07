@@ -1,16 +1,18 @@
-import { useState } from 'react';
-import { User } from '../../context/authContext';
+import { useState, useEffect, useRef } from 'react';
+import { User } from '../../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Search, Plus, Edit, Trash2, Upload, FileText, Video, Presentation } from 'lucide-react';
-import { DEMO_DOCUMENTS, DEMO_COURSES, Document } from '../../lib/mockData';
+import { Search, Plus, Trash2, Upload, FileText, Download, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { toast } from 'sonner';
+import { useDocument } from '../../hooks/useDocument';
+import { useCourses } from '../../hooks/useCourse';
+import { Document } from '../../lib/documentService';
 
 interface TeacherDocumentsProps {
   user: User;
@@ -19,76 +21,94 @@ interface TeacherDocumentsProps {
 export function TeacherDocuments({ user }: TeacherDocumentsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
-  const [formData, setFormData] = useState({
-    courseId: '',
-    title: '',
-    type: 'pdf' as 'pdf' | 'video' | 'slide',
-    category: ''
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load courses của teacher
+  const { data: coursesData, isLoading: coursesLoading } = useCourses({
+    size: 100,
   });
 
-  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.userId);
-  const [myDocuments, setMyDocuments] = useState(DEMO_DOCUMENTS.filter(doc =>
-    myCourses.some(course => course.id === doc.courseId)
-  ));
+  const myCourses = coursesData?.result
+    .filter(course => course.teacher?.userId === user.userId)
+    .map(course => ({
+      id: course.id,
+      name: course.name,
+      code: course.code,
+    })) || [];
 
-  const filteredDocuments = myDocuments.filter(doc =>
+  const {
+    documents,
+    loading: documentsLoading,
+    uploadDocument,
+    fetchDocuments,
+    downloadDocument,
+    deleteDocument,
+  } = useDocument();
+
+  // Fetch documents when a course is selected
+  useEffect(() => {
+    if (selectedCourseId) {
+      fetchDocuments(selectedCourseId);
+    }
+  }, [selectedCourseId]);
+
+  // Auto-select first course if available
+  useEffect(() => {
+    if (myCourses.length > 0 && !selectedCourseId) {
+      setSelectedCourseId(myCourses[0].id);
+    }
+  }, [myCourses]);
+
+  const filteredDocuments = documents.filter((doc) =>
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.category.toLowerCase().includes(searchQuery.toLowerCase())
+    doc.fileName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleUpload = () => {
-    if (!formData.courseId || !formData.title || !formData.category) {
-      toast.error('Vui lòng điền đầy đủ thông tin');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedCourseId) {
+      toast.error('Vui lòng chọn lớp học');
       return;
     }
 
-    // Mock upload
-    const newDoc: Document = {
-      id: `doc-${Date.now()}`,
-      courseId: formData.courseId,
-      title: formData.title,
-      type: formData.type,
-      url: `${formData.title.toLowerCase().replace(/\s+/g, '-')}.${formData.type}`,
-      uploadedAt: new Date().toISOString(),
-      category: formData.category
-    };
+    if (!selectedFile) {
+      toast.error('Vui lòng chọn file để upload');
+      return;
+    }
 
-    setMyDocuments([...myDocuments, newDoc]);
-    setUploadDialogOpen(false);
-    setFormData({
-      courseId: '',
-      title: '',
-      type: 'pdf',
-      category: ''
+    if (!uploadTitle.trim()) {
+      toast.error('Vui lòng nhập tiêu đề tài liệu');
+      return;
+    }
+
+    const success = await uploadDocument({
+      file: selectedFile,
+      title: uploadTitle,
+      courseId: selectedCourseId,
     });
-    toast.success('Đã upload tài liệu thành công!');
-  };
 
-  const openEditDialog = (doc: Document) => {
-    setSelectedDoc(doc);
-    setFormData({
-      courseId: doc.courseId,
-      title: doc.title,
-      type: doc.type,
-      category: doc.category
-    });
-    setEditDialogOpen(true);
-  };
-
-  const handleEdit = () => {
-    if (!selectedDoc) return;
-
-    setMyDocuments(myDocuments.map(doc =>
-      doc.id === selectedDoc.id
-        ? { ...doc, title: formData.title, category: formData.category }
-        : doc
-    ));
-    setEditDialogOpen(false);
-    setSelectedDoc(null);
-    toast.success('Đã cập nhật tài liệu thành công!');
+    if (success) {
+      setUploadDialogOpen(false);
+      setSelectedFile(null);
+      setUploadTitle('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      // Refresh documents list
+      if (selectedCourseId) {
+        fetchDocuments(selectedCourseId);
+      }
+    }
   };
 
   const openDeleteDialog = (doc: Document) => {
@@ -96,48 +116,62 @@ export function TeacherDocuments({ user }: TeacherDocumentsProps) {
     setDeleteDialogOpen(true);
   };
 
-  const handleDelete = () => {
-    if (!selectedDoc) return;
+  const handleDelete = async () => {
+    if (!selectedDoc || !selectedCourseId) return;
 
-    setMyDocuments(myDocuments.filter(doc => doc.id !== selectedDoc.id));
-    setDeleteDialogOpen(false);
-    setSelectedDoc(null);
-    toast.success('Đã xóa tài liệu thành công!');
-  };
-
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'pdf':
-        return <FileText className="w-5 h-5 text-red-500" />;
-      case 'video':
-        return <Video className="w-5 h-5 text-blue-500" />;
-      case 'slide':
-        return <Presentation className="w-5 h-5 text-orange-500" />;
-      default:
-        return <FileText className="w-5 h-5 text-gray-500" />;
+    const success = await deleteDocument(selectedCourseId, selectedDoc.id);
+    if (success) {
+      setDeleteDialogOpen(false);
+      setSelectedDoc(null);
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    const labels: { [key: string]: string } = {
-      pdf: 'PDF',
-      video: 'Video',
-      slide: 'Slide'
-    };
-    return labels[type] || type;
+  const handleDownload = async (doc: Document) => {
+    if (!selectedCourseId) return;
+    // Get extension from fileUrl if available
+    let filename = doc.fileName || doc.title;
+    if (doc.fileUrl && !filename.includes('.')) {
+      const ext = doc.fileUrl.substring(doc.fileUrl.lastIndexOf('.'));
+      if (ext) filename += ext;
+    }
+    await downloadDocument(selectedCourseId, doc.id, filename);
   };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getFileIcon = (fileName: string) => {
+    return <FileText className="w-5 h-5 text-blue-500" />;
+  };
+
+  const selectedCourse = myCourses.find((c) => c.id === selectedCourseId);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1>Quản lý tài liệu</h1>
+          <h1 className="text-2xl font-bold">Quản lý tài liệu</h1>
           <p className="text-muted-foreground">Upload và quản lý tài liệu học tập</p>
         </div>
 
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
+            <Button className="bg-primary hover:bg-primary/90" disabled={!selectedCourseId}>
               <Plus className="w-4 h-4 mr-2" />
               Upload tài liệu
             </Button>
@@ -152,80 +186,110 @@ export function TeacherDocuments({ user }: TeacherDocumentsProps) {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Lớp học</Label>
-                <Select
-                  value={formData.courseId}
-                  onValueChange={(value: string) => setFormData({ ...formData, courseId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn lớp học" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {myCourses.map(course => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input value={selectedCourse?.name || ''} disabled className="bg-muted" />
               </div>
 
               <div className="space-y-2">
-                <Label>Tiêu đề tài liệu</Label>
+                <Label>Tiêu đề tài liệu *</Label>
                 <Input
                   placeholder="Nhập tiêu đề..."
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Loại tài liệu</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value: 'pdf' | 'video' | 'slide') => setFormData({ ...formData, type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pdf">PDF</SelectItem>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="slide">Slide</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-2">
+                <Label>File tài liệu *</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  {selectedFile ? (
+                    <div>
+                      <p className="text-sm font-medium mb-2">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {formatFileSize(selectedFile.size)}
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setSelectedFile(null);
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
+                        }}
+                      >
+                        Chọn file khác
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground mb-2">Chọn file để upload</p>
+                      <Input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileChange}
+                        className="max-w-xs mx-auto"
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.mp4,.avi,.mov"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Hỗ trợ: PDF, Word, PowerPoint, Excel, Video (Tối đa 100MB)
+                      </p>
+                    </>
+                  )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Phân loại</Label>
-                  <Input
-                    placeholder="VD: Chương 1"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">Kéo và thả file hoặc</p>
-                <Button variant="outline">Chọn file</Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Hỗ trợ: PDF, MP4, PPTX (Tối đa 100MB)
-                </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setUploadDialogOpen(false);
+                  setSelectedFile(null);
+                  setUploadTitle('');
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
+                }}
+              >
                 Hủy
               </Button>
-              <Button onClick={handleUpload} className="bg-primary">
+              <Button onClick={handleUpload} disabled={documentsLoading}>
+                {documentsLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Upload
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Course Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Chọn lớp học</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {coursesLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : (
+            <Select
+              value={selectedCourseId?.toString()}
+              onValueChange={(value) => setSelectedCourseId(Number(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn lớp học" />
+              </SelectTrigger>
+              <SelectContent>
+                {myCourses.map((course) => (
+                  <SelectItem key={course.id} value={course.id.toString()}>
+                    {course.name} ({course.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -234,31 +298,35 @@ export function TeacherDocuments({ user }: TeacherDocumentsProps) {
             <CardTitle className="text-sm">Tổng tài liệu</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{myDocuments.length}</div>
+            <div className="text-2xl font-bold text-primary">{documents.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">PDF</CardTitle>
+            <CardTitle className="text-sm">Lớp học</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{myDocuments.filter(d => d.type === 'pdf').length}</div>
+            <div className="text-2xl font-bold text-primary">{myCourses.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Video</CardTitle>
+            <CardTitle className="text-sm">Tổng dung lượng</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{myDocuments.filter(d => d.type === 'video').length}</div>
+            <div className="text-2xl font-bold text-primary">
+              {formatFileSize(documents.reduce((sum, doc) => sum + (doc.fileSize || 0), 0))}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Slide</CardTitle>
+            <CardTitle className="text-sm">Lớp đã chọn</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{myDocuments.filter(d => d.type === 'slide').length}</div>
+            <div className="text-sm font-medium text-primary truncate">
+              {selectedCourse?.name || 'Chưa chọn'}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -280,94 +348,79 @@ export function TeacherDocuments({ user }: TeacherDocumentsProps) {
           <CardTitle>Danh sách tài liệu ({filteredDocuments.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tiêu đề</TableHead>
-                <TableHead>Lớp học</TableHead>
-                <TableHead>Loại</TableHead>
-                <TableHead>Phân loại</TableHead>
-                <TableHead>Ngày upload</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDocuments.map(doc => {
-                const course = myCourses.find(c => c.id === doc.courseId);
-                
-                return (
-                  <TableRow key={doc.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getIcon(doc.type)}
-                        <span>{doc.title}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{course?.name}</TableCell>
-                    <TableCell>{getTypeLabel(doc.type)}</TableCell>
-                    <TableCell>{doc.category}</TableCell>
-                    <TableCell>
-                      {new Date(doc.uploadedAt).toLocaleDateString('vi-VN')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="ghost" onClick={() => openEditDialog(doc)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => openDeleteDialog(doc)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-
-          {filteredDocuments.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              Không tìm thấy tài liệu nào
+          {documentsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" />
             </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên file</TableHead>
+                    <TableHead>Tiêu đề</TableHead>
+                    <TableHead>Loại file</TableHead>
+                    <TableHead>Dung lượng</TableHead>
+                    <TableHead>Ngày upload</TableHead>
+                    <TableHead className="text-right">Thao tác</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDocuments.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getFileIcon(doc.fileName)}
+                          <span className="font-medium">{doc.fileName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{doc.title}</TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                          {doc.fileType?.toUpperCase() || 'FILE'}
+                        </span>
+                      </TableCell>
+                      <TableCell>{formatFileSize(doc.fileSize || 0)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(doc.uploadedAt)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDownload(doc)}
+                            title="Tải xuống"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => openDeleteDialog(doc)}
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {filteredDocuments.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  {selectedCourseId
+                    ? 'Chưa có tài liệu nào. Hãy upload tài liệu đầu tiên!'
+                    : 'Vui lòng chọn lớp học để xem tài liệu'}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Chỉnh sửa tài liệu</DialogTitle>
-            <DialogDescription>
-              Cập nhật thông tin tài liệu
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Tiêu đề tài liệu</Label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Phân loại</Label>
-              <Input
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Hủy
-            </Button>
-            <Button onClick={handleEdit} className="bg-primary">
-              Lưu thay đổi
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -375,13 +428,19 @@ export function TeacherDocuments({ user }: TeacherDocumentsProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa tài liệu</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa tài liệu "{selectedDoc?.title}"? 
+              Bạn có chắc chắn muốn xóa tài liệu "{selectedDoc?.title}"?
+              <br />
               Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={documentsLoading}
+            >
+              {documentsLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
