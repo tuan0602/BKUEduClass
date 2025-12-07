@@ -5,6 +5,7 @@ com\example\demo\config\SwaggerConfig.class
 com\example\demo\config\CustomAuthenticationEntryPoint.class
 com\example\demo\controller\AuthController.class
 com\example\demo\config\CustomAccessDeniedHandler.class
+com\example\demo\service\DocumentService$1.class
 com\example\demo\config\SecurityConfiguration.class
 com\example\demo\service\SubmissionService$1.class
 com\example\demo\domain\enumeration\Role.class

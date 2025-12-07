@@ -8,6 +8,7 @@ D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\AssignmentController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\AuthController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\CourseController.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\DocumentController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\EnrollmentController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\FileController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\SubmissionController.java
@@ -54,14 +55,17 @@ D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\AssignmentRepository.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\CourseEnrollmentRepository.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\CourseRepository.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\DocumentRepository.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\QuestionRepository.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\SubmissionRepository.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\UserRepository.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\AssignmentService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\AuthService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\CourseService.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\DocumentService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\EnrolmentService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\SubmissionService.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\UploadFileService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\service\UserService.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\util\errors\CustomException.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\util\errors\DuplicateResourceException.java

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useCourses } from '../../hooks/useCourse';
 
 export type CorrectAnswer = "A" | "B" | "C" | "D";
+
 interface Question {
   id: number;
   question: string;
@@ -27,8 +28,9 @@ interface QuizAssignmentCreatorProps {
   onCancel: () => void;
   submitRef?: React.MutableRefObject<(() => void) | null>;
   teacherId?: string;
-  initialData?: any; // ⭐ HỖ TRỢ EDIT
+  initialData?: any;
 }
+
 export const emptyQuestion: Question = {
   id: Date.now(),
   question: "",
@@ -36,7 +38,7 @@ export const emptyQuestion: Question = {
   answerB: "",
   answerC: "",
   answerD: "",
-  correctAnswer: "A", // literal ✔
+  correctAnswer: "A",
 };
 
 export function QuizAssignmentCreator({
@@ -73,47 +75,59 @@ export function QuizAssignmentCreator({
   });
 
   const [questions, setQuestions] = useState<Question[]>([]);
-
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-
-
   const [currentQuestion, setCurrentQuestion] = useState<Question>(emptyQuestion);
 
-  // ======================================================
-  // ⭐ PREFILL EDIT MODE
-  // ======================================================
-useEffect(() => {
-  if (initialData) {
-    setFormData({
-      courseId: initialData.courseId?.toString() || "",
-      title: initialData.title || "",
-      description: initialData.description || "",
-      dueDate: initialData.dueDate ? initialData.dueDate.slice(0, 16) : ""
-    });
+  // ===========================
+  // ⭐ PREFILL EDIT MODE - FIXED
+  // ===========================
+  useEffect(() => {
+    console.log('📝 useEffect triggered - initialData:', initialData);
+    
+    if (initialData) {
+      console.log('📝 initialData.questions:', initialData.questions);
+      console.log('📝 Questions count:', initialData.questions?.length);
+      
+      setFormData({
+        courseId: initialData.courseId?.toString() || "",
+        title: initialData.title || "",
+        description: initialData.description || "",
+        dueDate: initialData.dueDate ? initialData.dueDate.slice(0, 16) : ""
+      });
 
-    setQuestions(
-      (initialData.questions || []).map((q: any) => ({
-        id: q.id || Date.now() + Math.random(),
-        question: q.question,
-        answerA: q.answerA,
-        answerB: q.answerB,
-        answerC: q.answerC,
-        answerD: q.answerD,
-        correctAnswer: q.correctAnswer as CorrectAnswer,
-      }))
-    );
-  } else {
-    setFormData({
-      courseId: '',
-      title: '',
-      description: '',
-      dueDate: ''
-    });
-
-    setQuestions([]);
-  }
-}, [initialData]);
+      const mappedQuestions = (initialData.questions || []).map((q: any) => {
+        console.log('📝 Mapping question:', q);
+        return {
+          id: q.id || Date.now() + Math.random(),
+          question: q.question,
+          answerA: q.answerA,
+          answerB: q.answerB,
+          answerC: q.answerC,
+          answerD: q.answerD,
+          correctAnswer: q.correctAnswer as CorrectAnswer,
+        };
+      });
+      
+      console.log('📝 Final mapped questions:', mappedQuestions);
+      setQuestions(mappedQuestions);
+    } else {
+      // ⭐ RESET về empty khi initialData = null/undefined
+      console.log('📝 Resetting to empty state');
+      setFormData({
+        courseId: '',
+        title: '',
+        description: '',
+        dueDate: ''
+      });
+      setQuestions([]);
+    }
+    
+    // ⭐ Cleanup function - reset khi component unmount
+    return () => {
+      console.log('📝 Cleanup - resetting questions');
+    };
+  }, [initialData]);
 
   // ===========================
   // EXPOSE SUBMIT TO PARENT
@@ -195,23 +209,27 @@ useEffect(() => {
       return;
     }
 
+    // ⭐ Convert dueDate to ISO format
+    const dueDateISO = new Date(formData.dueDate).toISOString();
+    
     const payload = {
-  courseId: formData.courseId,
-  title: formData.title,
-  description: formData.description,
-  dueDate: formData.dueDate,
-  status: initialData ? initialData.status : "DRAFT",   // nếu cần status
+      courseId: parseInt(formData.courseId),
+      title: formData.title,
+      description: formData.description,
+      dueDate: dueDateISO,
+      status: initialData ? initialData.status : "DRAFT",
+      // ⭐ Gửi đi với field "question" (số ít) theo CreateAssignmentDTO
+      question: questions.map(q => ({
+        question: q.question,
+        answerA: q.answerA,
+        answerB: q.answerB,
+        answerC: q.answerC,
+        answerD: q.answerD,
+        correctAnswer: q.correctAnswer
+      }))
+    };
 
-  question: questions.map(q => ({
-    question: q.question,
-    answerA: q.answerA,
-    answerB: q.answerB,
-    answerC: q.answerC,
-    answerD: q.answerD,
-    correctAnswer: q.correctAnswer
-  }))
-};
-
+    console.log('📤 Submitting payload:', payload);
     onSubmit(payload);
   };
 
@@ -254,7 +272,6 @@ useEffect(() => {
 
   return (
     <div className="space-y-6 py-4">
-
       {/* FORM */}
       <div className="space-y-4">
         <div className="space-y-2">
@@ -330,7 +347,6 @@ useEffect(() => {
               questions.map((q, index) => (
                 <Card key={q.id}>
                   <CardContent className="pt-3 pb-3">
-
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -370,7 +386,6 @@ useEffect(() => {
                         );
                       })}
                     </div>
-
                   </CardContent>
                 </Card>
               ))
@@ -392,7 +407,6 @@ useEffect(() => {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-
             <div className="space-y-2">
               <Label>Câu hỏi *</Label>
               <Textarea
@@ -433,7 +447,6 @@ useEffect(() => {
                 </SelectContent>
               </Select>
             </div>
-
           </div>
 
           <DialogFooter>
@@ -444,7 +457,6 @@ useEffect(() => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
