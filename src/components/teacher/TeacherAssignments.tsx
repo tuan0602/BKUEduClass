@@ -47,26 +47,21 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
   // API HOOKS
   // ===========================
 
-  // Fetch chi tiết assignment khi chỉnh sửa
   const { data: assignmentDetail, isLoading: isLoadingDetail } = useAssignmentDetail(
-  editingAssignmentId || 0,
-  editingAssignmentId !== null
-);
+    editingAssignmentId || 0,
+    editingAssignmentId !== null
+  );
 
-  // Fetch courses của teacher từ API
   const { data: coursesData, isLoading: isLoadingCourses, error: coursesError } = useCourses({
     size: 100,
   });
 
-  // Get course IDs của teacher hiện tại
   const myCourseIds = coursesData?.result
     .filter(course => course.teacher?.userId === user.userId)
     .map(course => course.id) || [];
 
-  // Fetch assignments từ tất cả courses
   const courseIds = myCourseIds;
 
-  // Lấy assignments cho từng course
   const assignmentQueries = useQueries({
     queries: courseIds.map(courseId => ({
       queryKey: assignmentKeys.list(courseId, { size: 100 }),
@@ -76,7 +71,6 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     }))
   });
 
-  // Mutations
   const createAssignmentMutation = useCreateAssignment();
   const updateAssignmentMutation = useUpdateAssignment();
   const deleteAssignmentMutation = useDeleteAssignment();
@@ -85,7 +79,6 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
   // DATA PROCESSING
   // ===========================
 
-  // Combine tất cả assignments từ các courses
   const allAssignmentsFromAPI = assignmentQueries
     .filter(q => q.data?.result)
     .flatMap((q, index) => {
@@ -101,11 +94,9 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
   const isLoadingAssignments = assignmentQueries.some(q => q.isLoading);
   const hasErrorAssignments = assignmentQueries.some(q => q.error);
 
-  // Overall loading state
   const isLoading = isLoadingCourses || isLoadingAssignments;
   const hasError = coursesError || hasErrorAssignments;
 
-  // Filter assignments
   const filteredAssignments = allAssignmentsFromAPI.filter(assignment =>
     assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     assignment.courseName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -115,6 +106,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
   // HANDLERS
   // ===========================
 
+  // ⭐ FIX 1: Lấy status từ data.status thay vì hardcode
   const handleCreateQuiz = (data: any) => {
     console.log('Creating quiz with data:', data);
 
@@ -123,7 +115,7 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
       title: data.title,
       description: data.description || '',
       dueDate: data.dueDate,
-      status: StatusAssignment.PUBLISHED,
+      status: data.status as StatusAssignment, // ⭐ LẤY TỪ FORM
       question: data.question.map((q: any) => ({
         question: q.question,
         answerA: q.answerA,
@@ -142,75 +134,74 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     });
   };
 
-  // Handle update assignment
   const handleEditClick = (assignment: any) => {
-  console.log('🔍 Current user ID:', user.userId);
-  console.log('🔍 Assignment to edit:', assignment);
-  console.log('🔍 Assignment ID:', assignment.id);
-  console.log('🔍 Course ID:', assignment.courseId);
-  // Tìm course info
-  const course = coursesData?.result.find(c => c.id === assignment.courseId);
-  console.log('🔍 Course info:', course);
-  console.log('🔍 Course teacher ID:', course?.teacher?.userId);
-  setEditingAssignmentId(assignment.id);
-  setEditDialogOpen(true);
-};
-
- const handleUpdateQuiz = (data: any) => {
-  // ⭐ Sử dụng editingAssignmentId thay vì assignmentDetail.id
-  if (!editingAssignmentId || !assignmentDetail) {
-    console.error('❌ Missing editingAssignmentId or assignmentDetail');
-    toast.error('Có lỗi xảy ra, vui lòng thử lại');
-    return;
-  }
-
-  const courseId = allAssignmentsFromAPI.find(a => a.id === editingAssignmentId)?.courseId;
-  
-  if (!courseId) {
-    console.error('❌ Cannot find courseId for assignment:', editingAssignmentId);
-    toast.error('Không tìm thấy thông tin lớp học');
-    return;
-  }
-   const finalCourseId = Number(courseId);
-  const payload: CreateAssignmentDTO = {
-    courseId: finalCourseId,
-    title: data.title,
-    description: data.description || '',
-    dueDate: data.dueDate,
-    status: StatusAssignment.DRAFT,
-    question: data.question.map((q: any) => ({
-      question: q.question,
-      answerA: q.answerA,
-      answerB: q.answerB,
-      answerC: q.answerC,
-      answerD: q.answerD,
-      correctAnswer: q.correctAnswer,
-    })),
+    console.log('🔍 Current user ID:', user.userId);
+    console.log('🔍 Assignment to edit:', assignment);
+    console.log('🔍 Assignment ID:', assignment.id);
+    console.log('🔍 Course ID:', assignment.courseId);
+    
+    const course = coursesData?.result.find(c => c.id === assignment.courseId);
+    console.log('🔍 Course info:', course);
+    console.log('🔍 Course teacher ID:', course?.teacher?.userId);
+    
+    setEditingAssignmentId(assignment.id);
+    setEditDialogOpen(true);
   };
 
-  console.log('📤 Updating assignment:', editingAssignmentId);
-  console.log('📤 Payload:', payload);
-
-  updateAssignmentMutation.mutate(
-    { assignmentId: editingAssignmentId, assignmentData: payload },
-    {
-      onSuccess: () => {
-        setEditDialogOpen(false);
-        setEditingAssignmentId(null);
-        toast.success('Cập nhật bài kiểm tra thành công!');
-      },
+  // ⭐ FIX 2: Lấy status từ data.status thay vì hardcode DRAFT
+  const handleUpdateQuiz = (data: any) => {
+    if (!editingAssignmentId || !assignmentDetail) {
+      console.error('❌ Missing editingAssignmentId or assignmentDetail');
+      toast.error('Có lỗi xảy ra, vui lòng thử lại');
+      return;
     }
-  );
-};
 
-  // Handle delete assignment
+    const courseId = allAssignmentsFromAPI.find(a => a.id === editingAssignmentId)?.courseId;
+    
+    if (!courseId) {
+      console.error('❌ Cannot find courseId for assignment:', editingAssignmentId);
+      toast.error('Không tìm thấy thông tin lớp học');
+      return;
+    }
+
+    const finalCourseId = Number(courseId);
+    const payload: CreateAssignmentDTO = {
+      courseId: finalCourseId,
+      title: data.title,
+      description: data.description || '',
+      dueDate: data.dueDate,
+      status: data.status as StatusAssignment,
+      question: data.question.map((q: any) => ({
+        question: q.question,
+        answerA: q.answerA,
+        answerB: q.answerB,
+        answerC: q.answerC,
+        answerD: q.answerD,
+        correctAnswer: q.correctAnswer,
+      })),
+    };
+
+    console.log('📤 Updating assignment:', editingAssignmentId);
+    console.log('📤 Payload:', payload);
+
+    updateAssignmentMutation.mutate(
+      { assignmentId: editingAssignmentId, assignmentData: payload },
+      {
+        onSuccess: () => {
+          setEditDialogOpen(false);
+          setEditingAssignmentId(null);
+          toast.success('Cập nhật bài kiểm tra thành công!');
+        },
+      }
+    );
+  };
+
   const handleDeleteAssignment = (assignmentId: number) => {
     if (!confirm('Bạn có chắc chắn muốn xóa bài tập này?')) return;
     deleteAssignmentMutation.mutate(assignmentId);
   };
 
   const getSubmissionStats = (assignmentId: number) => {
-    // TODO: Fetch từ API thật
     const submissions = DEMO_SUBMISSIONS.filter(s => s.assignmentId === assignmentId.toString());
     const graded = submissions.filter(s => s.status === 'graded').length;
     return { total: submissions.length, graded };
@@ -243,7 +234,6 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     const score = parseFloat(gradeData.score);
     const assignment = allAssignmentsFromAPI.find(a => a.id === selectedAssignment);
 
-    // TODO: Thay bằng maxScore từ assignment
     const maxScore = 100;
     if (score < 0 || score > maxScore) {
       toast.error(`Điểm phải từ 0 đến ${maxScore}`);
@@ -251,7 +241,6 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
     }
 
     if (selectedSubmission) {
-      // TODO: Call API để grade submission
       setSubmissionDialogOpen(false);
       setGradeData({ score: '', feedback: '' });
       setSelectedSubmission(null);
@@ -598,73 +587,73 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
 
       {/* EDIT ASSIGNMENT DIALOG */}
       <Dialog 
-  open={editDialogOpen} 
-  onOpenChange={(open) => {
-    setEditDialogOpen(open);
-    if (!open) {
-      setEditingAssignmentId(null);
-    }
-  }}
->
-  <DialogContent
-    className="max-w-3xl flex flex-col p-0"
-    style={{ height: "85vh", maxHeight: "85vh" }}
-  >
-    <DialogHeader className="px-6 pt-6">
-      <DialogTitle>Chỉnh sửa bài kiểm tra</DialogTitle>
-      <DialogDescription>
-        Thay đổi thông tin và câu hỏi của bài kiểm tra
-      </DialogDescription>
-    </DialogHeader>
-
-    <div style={{ flex: 1, overflowY: "auto", padding: "0 24px", minHeight: 0 }}>
-      {isLoadingDetail ? (
-        <div className="text-center py-12">
-          <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary" />
-          <p className="mt-4 text-muted-foreground">Đang tải chi tiết bài kiểm tra...</p>
-        </div>
-      ) : assignmentDetail ? (
-        <QuizAssignmentCreator
-          key={assignmentDetail.id}
-          teacherId={user.userId}
-          initialData={{
-            ...assignmentDetail,
-            courseId: allAssignmentsFromAPI.find(a => a.id === assignmentDetail.id)?.courseId
-          }}
-          onSubmit={handleUpdateQuiz}
-          onCancel={() => {
-            setEditDialogOpen(false);
+        open={editDialogOpen} 
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) {
             setEditingAssignmentId(null);
-          }}
-          submitRef={quizSubmitRef}
-        />
-      ) : null}
-    </div>
-
-    <DialogFooter style={{ borderTop: "1px solid #e5e7eb", padding: "16px 24px" }}>
-      <Button
-        variant="outline"
-        onClick={() => {
-          setEditDialogOpen(false);
-          setEditingAssignmentId(null);
+          }
         }}
-        disabled={updateAssignmentMutation.isPending}
       >
-        Hủy
-      </Button>
-      <Button
-        onClick={() => quizSubmitRef.current?.()}
-        className="bg-primary"
-        disabled={updateAssignmentMutation.isPending || isLoadingDetail}
-      >
-        {updateAssignmentMutation.isPending && (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        )}
-        Cập nhật bài kiểm tra
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
+        <DialogContent
+          className="max-w-3xl flex flex-col p-0"
+          style={{ height: "85vh", maxHeight: "85vh" }}
+        >
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Chỉnh sửa bài kiểm tra</DialogTitle>
+            <DialogDescription>
+              Thay đổi thông tin và câu hỏi của bài kiểm tra
+            </DialogDescription>
+          </DialogHeader>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 24px", minHeight: 0 }}>
+            {isLoadingDetail ? (
+              <div className="text-center py-12">
+                <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Đang tải chi tiết bài kiểm tra...</p>
+              </div>
+            ) : assignmentDetail ? (
+              <QuizAssignmentCreator
+                key={assignmentDetail.id}
+                teacherId={user.userId}
+                initialData={{
+                  ...assignmentDetail,
+                  courseId: allAssignmentsFromAPI.find(a => a.id === assignmentDetail.id)?.courseId
+                }}
+                onSubmit={handleUpdateQuiz}
+                onCancel={() => {
+                  setEditDialogOpen(false);
+                  setEditingAssignmentId(null);
+                }}
+                submitRef={quizSubmitRef}
+              />
+            ) : null}
+          </div>
+
+          <DialogFooter style={{ borderTop: "1px solid #e5e7eb", padding: "16px 24px" }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditDialogOpen(false);
+                setEditingAssignmentId(null);
+              }}
+              disabled={updateAssignmentMutation.isPending}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={() => quizSubmitRef.current?.()}
+              className="bg-primary"
+              disabled={updateAssignmentMutation.isPending || isLoadingDetail}
+            >
+              {updateAssignmentMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              Cập nhật bài kiểm tra
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

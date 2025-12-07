@@ -71,16 +71,18 @@ export function QuizAssignmentCreator({
     courseId: '',
     title: '',
     description: '',
-    dueDate: ''
+    dueDate: '',
+    status: 'DRAFT' as 'DRAFT' | 'PUBLISHED'
   });
 
+  const [originalStatus, setOriginalStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<Question>(emptyQuestion);
 
   // ===========================
-  // ⭐ PREFILL EDIT MODE - FIXED
+  // PREFILL EDIT MODE
   // ===========================
   useEffect(() => {
     console.log('📝 useEffect triggered - initialData:', initialData);
@@ -89,12 +91,17 @@ export function QuizAssignmentCreator({
       console.log('📝 initialData.questions:', initialData.questions);
       console.log('📝 Questions count:', initialData.questions?.length);
       
+      const status = (initialData.status || "DRAFT") as 'DRAFT' | 'PUBLISHED';
+      
       setFormData({
         courseId: initialData.courseId?.toString() || "",
         title: initialData.title || "",
         description: initialData.description || "",
-        dueDate: initialData.dueDate ? initialData.dueDate.slice(0, 16) : ""
+        dueDate: initialData.dueDate ? initialData.dueDate.slice(0, 16) : "",
+        status: status
       });
+
+      setOriginalStatus(status); // ⭐ Lưu trạng thái ban đầu
 
       const mappedQuestions = (initialData.questions || []).map((q: any) => {
         console.log('📝 Mapping question:', q);
@@ -112,18 +119,18 @@ export function QuizAssignmentCreator({
       console.log('📝 Final mapped questions:', mappedQuestions);
       setQuestions(mappedQuestions);
     } else {
-      // ⭐ RESET về empty khi initialData = null/undefined
       console.log('📝 Resetting to empty state');
       setFormData({
         courseId: '',
         title: '',
         description: '',
-        dueDate: ''
+        dueDate: '',
+        status: 'DRAFT'
       });
+      setOriginalStatus('DRAFT');
       setQuestions([]);
     }
     
-    // ⭐ Cleanup function - reset khi component unmount
     return () => {
       console.log('📝 Cleanup - resetting questions');
     };
@@ -209,16 +216,23 @@ export function QuizAssignmentCreator({
       return;
     }
 
-    // ⭐ Convert dueDate to ISO format
     const dueDateISO = new Date(formData.dueDate).toISOString();
+    
+    // ⭐ LOGIC THÔNG MINH: Nếu đang edit assignment PUBLISHED, tự động chuyển về DRAFT
+    let finalStatus = formData.status;
+    
+    if (initialData && originalStatus === 'PUBLISHED') {
+      // Đang edit assignment đã published → Backend chỉ chấp nhận DRAFT
+      finalStatus = 'DRAFT';
+      toast.info('⚠️ Assignment sẽ chuyển về trạng thái Bản nháp. Bạn có thể publish lại sau khi lưu.');
+    }
     
     const payload = {
       courseId: parseInt(formData.courseId),
       title: formData.title,
       description: formData.description,
       dueDate: dueDateISO,
-      status: initialData ? initialData.status : "DRAFT",
-      // ⭐ Gửi đi với field "question" (số ít) theo CreateAssignmentDTO
+      status: finalStatus, // ⭐ Dùng finalStatus
       question: questions.map(q => ({
         question: q.question,
         answerA: q.answerA,
@@ -316,6 +330,59 @@ export function QuizAssignmentCreator({
             value={formData.dueDate}
             onChange={(e) => handleInputChange('dueDate', e.target.value)}
           />
+        </div>
+
+        {/* ⭐ STATUS SELECT */}
+        <div className="space-y-2">
+          <Label>Trạng thái *</Label>
+          
+          {/* ⚠️ WARNING khi edit PUBLISHED assignment */}
+          {/* {initialData && originalStatus === 'PUBLISHED' && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-2">
+              <p className="text-sm text-yellow-800 font-medium flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
+                <span>Lưu ý quan trọng</span>
+              </p>
+              <p className="text-xs text-yellow-700 mt-1">
+                Assignment đang ở trạng thái <strong>Đã xuất bản</strong>. Khi lưu thay đổi, 
+                assignment sẽ tự động chuyển về <strong>Bản nháp</strong> để đảm bảo tính nhất quán. 
+                Sau khi lưu xong, bạn có thể edit lại và chọn "Đã xuất bản" để publish lại.
+              </p>
+            </div>
+          )}
+           */}
+          <Select
+            value={formData.status}
+            onValueChange={(value) => handleInputChange('status', value)}
+            disabled={initialData && originalStatus === 'PUBLISHED'} 
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="DRAFT">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">Bản nháp</Badge>
+                  <span className="text-xs text-muted-foreground">Sinh viên chưa thấy</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="PUBLISHED">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="text-xs">Đã xuất bản</Badge>
+                  <span className="text-xs text-muted-foreground">Sinh viên có thể làm</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* ℹ️ Info text - chỉ hiển thị khi TẠO MỚI */}
+          {!initialData && (
+            <p className="text-xs text-muted-foreground">
+              {formData.status === 'DRAFT' 
+                ? '⚠️ Bản nháp: Sinh viên chưa thể nhìn thấy bài kiểm tra này'
+                : '✅ Đã xuất bản: Sinh viên có thể làm bài ngay'}
+            </p>
+          )}
         </div>
       </div>
 
