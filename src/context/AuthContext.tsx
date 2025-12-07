@@ -24,6 +24,7 @@ interface AuthContextType {
     role: "STUDENT" | "TEACHER"
   ) => Promise<boolean>;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -122,8 +123,12 @@ const login = async (email: string, password: string) => {
     queryClient.clear();
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    setUser((prev) => prev ? { ...prev, ...updates } : null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
