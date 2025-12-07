@@ -74,9 +74,7 @@ public class AssignmentService {
             throw new ResourceNotFoundException("Assignment not found");
         }
         validateTeacher(assignment.getCourse(), currentUserEmail);
-        if (assignment.getStatus() != StatusAssignment.DRAFT) {
-            throw new IllegalStateException("Cannot delete a published assignment");
-        }
+
         List<Question> questions = assignment.getQuestions();
         questionRepository.deleteAll(questions);
         assignmentRepository.deleteById(assignmentId);
