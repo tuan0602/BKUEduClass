@@ -13,6 +13,5 @@ import java.util.Optional;
 @Repository
 public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollment, Long>, JpaSpecificationExecutor<CourseEnrollment> {
     Optional<CourseEnrollment> findByStudentAndCourse(User user, Course course);
-
     boolean existsByStudentAndCourseAndStatus(User student, Course course, EnrollmentStatus status);
 }

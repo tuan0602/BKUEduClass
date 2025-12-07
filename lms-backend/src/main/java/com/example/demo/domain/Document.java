@@ -21,8 +21,6 @@ public class Document {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "courseId")
     private Course course;

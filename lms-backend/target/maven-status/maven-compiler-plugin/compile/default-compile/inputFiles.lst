@@ -1,6 +1,7 @@
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\config\CorsConfig.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\config\CustomAccessDeniedHandler.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\config\CustomAuthenticationEntryPoint.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\config\S3Config.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\config\SecurityConfiguration.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\config\SwaggerConfig.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\config\UserDetailsCustom.java
@@ -8,6 +9,7 @@ D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\AuthController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\CourseController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\EnrollmentController.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\FileController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\SubmissionController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\controller\UserController.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\DemoApplication.java

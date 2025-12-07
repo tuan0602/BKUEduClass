@@ -47,6 +47,17 @@ export interface Assignment {
   createdAt: string;
   updatedAt: string;
   status: StatusAssignment;
+
+  // ⭐ backend trả về list câu hỏi → phải khai báo
+  questions: {
+    id: number;
+    question: string;
+    answerA: string;
+    answerB: string;
+    answerC: string;
+    answerD: string;
+    correctAnswer: Answer;
+  }[];
 }
 
 export interface QuestionForStudentDTO {
@@ -195,10 +206,22 @@ const assignmentService = {
    * Requires: Bearer Token + TEACHER role
    */
   deleteAssignment: async (assignmentId: number): Promise<void> => {
-    await api.delete<ApiResponse<void>>(
+  console.log('🗑️ Calling DELETE API for assignment:', assignmentId);
+  console.log('🔗 URL:', `/teacher/assignments/${assignmentId}`);
+  
+  try {
+    const response = await api.delete<ApiResponse<void>>(
       `/teacher/assignments/${assignmentId}`
     );
-  },
+    console.log('✅ Delete response:', response);
+  } catch (error: any) {
+    console.error('❌ Delete API error:', error);
+    console.error('❌ Error response:', error.response);
+    console.error('❌ Status:', error.response?.status);
+    console.error('❌ Data:', error.response?.data);
+    throw error;
+  }
+},
 };
 
 export default assignmentService;
