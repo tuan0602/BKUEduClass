@@ -1,5 +1,6 @@
  package com.example.demo.service;
 
+ import com.example.demo.domain.Document;
  import com.example.demo.domain.User;
  import com.example.demo.domain.enumeration.Role;
  import com.example.demo.dto.request.user.CreateUserRequest;
@@ -13,13 +14,19 @@
  import com.example.demo.util.errors.ResourceNotFoundException;
  import jakarta.persistence.criteria.Predicate;
  import lombok.RequiredArgsConstructor;
+ import org.springframework.beans.factory.annotation.Value;
  import org.springframework.data.domain.Page;
  import org.springframework.data.domain.Pageable;
  import org.springframework.data.jpa.domain.Specification;
+ import org.springframework.http.HttpMethod;
  import org.springframework.security.crypto.password.PasswordEncoder;
  import org.springframework.stereotype.Service;
  import org.springframework.transaction.annotation.Transactional;
+ import org.springframework.web.multipart.MultipartFile;
+ import software.amazon.awssdk.services.s3.S3Client;
 
+ import java.io.IOException;
+ import java.util.Date;
  import java.util.List;
  import java.util.stream.Collectors;
 
@@ -28,6 +35,10 @@
  public class UserService {
      final private UserRepository userRepository;
      final private PasswordEncoder passwordEncoder;
+     final private UploadFileService uploadFileService;
+     private final S3Client s3Client;
+     @Value("${aws.s3.bucket}")
+     private String bucketName;
 
      public User getUserByEmail(String email){
          return userRepository.findByEmail(email).orElse(null);
@@ -172,9 +183,14 @@
 
 
      }
-
-
-
-
-
+     public void changeUserInfo(String useremail, String name, String phone){
+         User user=userRepository.findByEmail(useremail).orElseThrow(()-> new CustomException("User not found"));
+         if (name!=null && !name.isEmpty()){
+             user.setName(name);
+         }
+         if (phone!=null && !phone.isEmpty()){
+             user.setPhone(phone);
+         }
+         userRepository.save(user);
+     }
  }
