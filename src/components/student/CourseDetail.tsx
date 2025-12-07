@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -16,7 +16,9 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useCourseDetail } from '../../hooks/useCourse';
+import { useDocument } from '../../hooks/useDocument';
 import { Progress } from '../ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
 export function CourseDetail() {
   const navigate = useNavigate();
@@ -25,6 +27,21 @@ export function CourseDetail() {
 
   // Fetch course detail
   const { data: courseDetail, isLoading, error } = useCourseDetail(Number(courseId));
+  
+  // Fetch documents
+  const { documents, fetchDocuments, downloadDocument, loading: docsLoading } = useDocument();
+
+  // Load documents when courseId changes
+  useEffect(() => {
+    if (courseId) {
+      fetchDocuments(Number(courseId));
+    }
+  }, [courseId]);
+
+  // Debug documents data
+  useEffect(() => {
+    console.log('Documents data:', documents);
+  }, [documents]);
 
   // Loading state
   if (isLoading) {
@@ -143,8 +160,7 @@ export function CourseDetail() {
         <TabsList className="w-full grid grid-cols-5">
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="members">Thành viên</TabsTrigger>
-          <TabsTrigger value="documents" disabled>
-            <Lock className="w-3 h-3 mr-1" />
+          <TabsTrigger value="documents">
             Tài liệu
           </TabsTrigger>
           <TabsTrigger value="assignments" disabled>
@@ -303,15 +319,67 @@ export function CourseDetail() {
           </Card>
         </TabsContent>
 
-        {/* Disabled Tabs - Documents */}
+        {/* Documents Tab */}
         <TabsContent value="documents">
           <Card>
-            <CardContent className="py-12 text-center">
-              <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Tính năng đang phát triển</h3>
-              <p className="text-muted-foreground">
-                Quản lý tài liệu sẽ sớm được cập nhật
-              </p>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Tài liệu khóa học
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {docsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : documents.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Chưa có tài liệu nào</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tiêu đề</TableHead>
+                      <TableHead>Loại file</TableHead>
+                      <TableHead>Dung lượng</TableHead>
+                      <TableHead>Ngày upload</TableHead>
+                      <TableHead className="text-right">Thao tác</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.map((doc) => {
+                      console.log('Rendering doc:', doc.id, 'title:', doc.title);
+                      return (
+                      <TableRow key={doc.id}>
+                        <TableCell className="font-medium">{doc.title}</TableCell>
+                        <TableCell>
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
+                            {doc.fileExtension ? `.${doc.fileExtension.toUpperCase()}` : 'FILE'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : '0 KB'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('vi-VN') : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => downloadDocument(Number(courseId), doc.id, doc.title, doc.fileExtension)}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )})}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

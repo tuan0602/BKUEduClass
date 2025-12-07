@@ -75,12 +75,20 @@ export const useDocument = () => {
   const downloadDocument = async (
     courseId: number,
     documentId: number,
-    fileName: string
+    fileName: string,
+    fileExtension?: string
   ) => {
     setLoading(true);
     try {
       const blob = await documentService.downloadDocument(courseId, documentId);
-      documentService.triggerDownload(blob, fileName);
+      
+      // Add file extension if provided and not already present
+      let finalFileName = fileName;
+      if (fileExtension && !fileName.endsWith(`.${fileExtension}`)) {
+        finalFileName = `${fileName}.${fileExtension}`;
+      }
+      
+      documentService.triggerDownload(blob, finalFileName);
       toast.success("Tải xuống thành công!");
       return true;
     } catch (error: any) {

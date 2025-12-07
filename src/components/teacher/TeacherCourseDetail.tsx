@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -16,8 +16,20 @@ import {
   Trash2,
   Search,
   Loader2,
-  Lock
+  Lock,
+  Download,
+  Upload,
+  Plus
 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table';
+import { useDocument } from '../../hooks/useDocument';
 import {
   Dialog,
   DialogContent,
@@ -55,6 +67,95 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
 
   // Fetch course detail
   const { data: courseDetail, isLoading, error } = useCourseDetail(Number(courseId));
+
+  // Fetch documents for this course
+  const { documents, loading, fetchDocuments, downloadDocument, uploadDocument, deleteDocument } = useDocument();
+
+  // Document upload states
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Document delete states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<any>(null);
+
+  // Load documents when courseId changes
+  useEffect(() => {
+    if (courseId) {
+      fetchDocuments(Number(courseId));
+    }
+  }, [courseId]);
+
+  // Format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  };
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  // Handle upload
+  const handleUpload = async () => {
+    if (!courseId) {
+      toast.error('Không tìm thấy khóa học');
+      return;
+    }
+
+    if (!selectedFile) {
+      toast.error('Vui lòng chọn file để upload');
+      return;
+    }
+
+    if (!uploadTitle.trim()) {
+      toast.error('Vui lòng nhập tiêu đề tài liệu');
+      return;
+    }
+
+    const success = await uploadDocument({
+      file: selectedFile,
+      title: uploadTitle,
+      courseId: Number(courseId),
+    });
+
+    if (success) {
+      setUploadDialogOpen(false);
+      setSelectedFile(null);
+      setUploadTitle('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      // Refresh documents list
+      fetchDocuments(Number(courseId));
+    }
+  };
+
+  // Open delete dialog
+  const openDeleteDialog = (doc: any) => {
+    setSelectedDoc(doc);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle delete
+  const handleDelete = async () => {
+    if (!selectedDoc || !courseId) return;
+
+    const success = await deleteDocument(Number(courseId), selectedDoc.id);
+    if (success) {
+      setDeleteDialogOpen(false);
+      setSelectedDoc(null);
+      // Refresh documents list
+      fetchDocuments(Number(courseId));
+    }
+  };
 
   // Loading state
   if (isLoading) {
@@ -177,8 +278,7 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
             <Lock className="w-3 h-3 mr-1" />
             Bài tập
           </TabsTrigger>
-          <TabsTrigger value="documents" className="flex-1 min-w-[100px]" disabled>
-            <Lock className="w-3 h-3 mr-1" />
+          <TabsTrigger value="documents" className="flex-1 min-w-[100px]">
             Tài liệu
           </TabsTrigger>
           <TabsTrigger value="discussions" className="flex-1 min-w-[100px]" disabled>
@@ -397,14 +497,138 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
 
         <TabsContent value="documents">
           <Card>
-            <CardContent className="py-12 text-center">
-              <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Tính năng đang phát triển</h3>
-              <p className="text-muted-foreground">
-                Quản lý tài liệu sẽ sớm được cập nhật
-              </p>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>Tài liệu khóa học</CardTitle>
+              <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Thêm tài liệu
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Tải lên tài liệu mới</DialogTitle>
+                    <DialogDescription>
+                      Tải lên tài liệu học tập cho khóa học này
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Tiêu đề tài liệu</Label>
+                      <Input
+                        id="title"
+                        placeholder="Nhập tiêu đề tài liệu"
+                        value={uploadTitle}
+                        onChange={(e) => setUploadTitle(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="file">Chọn file</Label>
+                      <Input
+                        id="file"
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                      />
+                      {selectedFile && (
+                        <p className="text-sm text-muted-foreground">
+                          File đã chọn: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setUploadDialogOpen(false)} disabled={loading}>
+                      Hủy
+                    </Button>
+                    <Button onClick={handleUpload} disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          Đang tải lên...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-1" />
+                          Tải lên
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {documents.length === 0 ? (
+                <div className="py-12 text-center">
+                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Chưa có tài liệu nào</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tên tài liệu</TableHead>
+                      <TableHead>Loại</TableHead>
+                      <TableHead>Kích thước</TableHead>
+                      <TableHead>Ngày tải lên</TableHead>
+                      <TableHead className="text-right">Thao tác</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.map((doc) => (
+                      <TableRow key={doc.id}>
+                        <TableCell className="font-medium">{doc.title}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{doc.fileExtension?.toUpperCase()}</Badge>
+                        </TableCell>
+                        <TableCell>{formatFileSize(doc.fileSize)}</TableCell>
+                        <TableCell>{new Date(doc.createdAt).toLocaleDateString('vi-VN')}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => downloadDocument(Number(courseId), doc.id, doc.title, doc.fileExtension)}
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            Tải xuống
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => openDeleteDialog(doc)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Xóa
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
+
+          {/* Delete Confirmation Dialog */}
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Xác nhận xóa tài liệu</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Bạn có chắc chắn muốn xóa tài liệu "{selectedDoc?.title}"? Hành động này không thể hoàn tác.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Hủy</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Xóa
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
 
         <TabsContent value="discussions">
