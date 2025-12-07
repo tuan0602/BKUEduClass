@@ -18,6 +18,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class DocumentController {
     private final DocumentService documentService;
     private final SecurityUtil securityUtil;
