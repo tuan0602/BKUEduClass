@@ -36,6 +36,15 @@ public class Document {
     @Column(name = "fileUrl", columnDefinition = "TEXT", nullable = false)
     private String fileUrl;
 
+    @Column(name = "fileType", length = 100)
+    private String fileType;
+
+    @Column(name = "fileExtension", length = 20)
+    private String fileExtension;
+
+    @Column(name = "fileSize")
+    private Long fileSize;
+
     @Column(name = "createdAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

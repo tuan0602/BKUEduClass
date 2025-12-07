@@ -128,11 +128,10 @@ export function TeacherDocuments({ user }: TeacherDocumentsProps) {
 
   const handleDownload = async (doc: Document) => {
     if (!selectedCourseId) return;
-    // Get extension from fileUrl if available
-    let filename = doc.fileName || doc.title;
-    if (doc.fileUrl && !filename.includes('.')) {
-      const ext = doc.fileUrl.substring(doc.fileUrl.lastIndexOf('.'));
-      if (ext) filename += ext;
+    // Get filename with extension from database
+    let filename = doc.title;
+    if (doc.fileExtension) {
+      filename += `.${doc.fileExtension}`;
     }
     await downloadDocument(selectedCourseId, doc.id, filename);
   };
@@ -376,13 +375,13 @@ export function TeacherDocuments({ user }: TeacherDocumentsProps) {
                       </TableCell>
                       <TableCell>{doc.title}</TableCell>
                       <TableCell>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                          {doc.fileType?.toUpperCase() || 'FILE'}
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
+                          {doc.fileExtension ? `.${doc.fileExtension.toUpperCase()}` : 'FILE'}
                         </span>
                       </TableCell>
                       <TableCell>{formatFileSize(doc.fileSize || 0)}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(doc.uploadedAt)}
+                        {formatDate(doc.uploadedAt || doc.createdAt || '')}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">

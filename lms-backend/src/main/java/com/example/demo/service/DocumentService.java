@@ -23,19 +23,32 @@ public class DocumentService {
     final private DocumentRepository documentRepository;
     final private UserRepository userRepository;
     final private CourseEnrollmentRepository courseEnrollmentRepository;
-    public void uploadDocumentToCourse(MultipartFile file, String userMail, Long courseId,String title) {
-        User user=userRepository.findByEmail(userMail).orElseThrow(()-> new RuntimeException("User not found"));
-        Course course=courseRepository.findById(courseId).orElseThrow(()-> new RuntimeException("Course not found"));
+
+    public void uploadDocumentToCourse(MultipartFile file, String userMail, Long courseId, String title) {
+        User user = userRepository.findByEmail(userMail).orElseThrow(() -> new RuntimeException("User not found"));
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new RuntimeException("Course not found"));
         if (!course.getTeacher().getEmail().equals(userMail)) {
             throw new RuntimeException("User not in course");
         }
         try {
             String key = uploadFileService.uploadFile(file, "documents");
-            Document document=new Document();
+            Document document = new Document();
             document.setTitle(title);
             document.setUploader(user);
             document.setCourse(course);
             document.setFileUrl(key);
+
+            // Set file type and extension
+            document.setFileType(file.getContentType());
+            String filename = file.getOriginalFilename();
+            if (filename != null && filename.contains(".")) {
+                String extension = filename.substring(filename.lastIndexOf(".") + 1);
+                document.setFileExtension(extension);
+            }
+
+            // Set file size
+            document.setFileSize(file.getSize());
+
             documentRepository.save(document);
 
         } catch (IOException e) {
@@ -44,19 +57,22 @@ public class DocumentService {
             throw new RuntimeException("Upload file failed", e);
         }
     }
-    public ResponseEntity<byte[]> downloadFile(Long id,String userMail) {
-        User user=userRepository.findByEmail(userMail).orElseThrow(()-> new RuntimeException("User not found"));
-        Document document=documentRepository.findById(id).orElseThrow(()-> new RuntimeException("Document not found"));
 
-        switch (user.getRole()){
+    public ResponseEntity<byte[]> downloadFile(Long id, String userMail) {
+        User user = userRepository.findByEmail(userMail).orElseThrow(() -> new RuntimeException("User not found"));
+        Document document = documentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        switch (user.getRole()) {
             case STUDENT:
-                boolean isEnrolled=courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,document.getCourse(), com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
-                if(!isEnrolled){
+                boolean isEnrolled = courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,
+                        document.getCourse(), com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+                if (!isEnrolled) {
                     throw new RuntimeException("User not enrolled in course");
                 }
                 break;
             case TEACHER:
-                if(!document.getCourse().getTeacher().getEmail().equals(userMail)){
+                if (!document.getCourse().getTeacher().getEmail().equals(userMail)) {
                     throw new RuntimeException("User not in course");
                 }
                 break;
@@ -64,47 +80,52 @@ public class DocumentService {
                 throw new RuntimeException("Invalid user role");
         }
         try {
-            ResponseEntity<byte[]> file= uploadFileService.downloadFile("documents", document.getFileUrl());
+            ResponseEntity<byte[]> file = uploadFileService.downloadFile("documents", document.getFileUrl());
             return file;
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Download file failed", e);
         }
     }
-    public List<Document> getAllDocumentsOfCourse(Long courseId,String userMail) {
-        User user=userRepository.findByEmail(userMail).orElseThrow(()-> new RuntimeException("User not found"));
-        Course course=courseRepository.findById(courseId).orElseThrow(()-> new RuntimeException("Course not found"));
-        switch (user.getRole()){
+
+    public List<Document> getAllDocumentsOfCourse(Long courseId, String userMail) {
+        User user = userRepository.findByEmail(userMail).orElseThrow(() -> new RuntimeException("User not found"));
+        Course course = courseRepository.findById(courseId).orElseThrow(() -> new RuntimeException("Course not found"));
+        switch (user.getRole()) {
             case STUDENT:
-                boolean isEnrolled=courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,course, com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
-                if(!isEnrolled){
+                boolean isEnrolled = courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user, course,
+                        com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+                if (!isEnrolled) {
                     throw new RuntimeException("User not enrolled in course");
                 }
                 break;
             case TEACHER:
-                if(!course.getTeacher().getEmail().equals(userMail)){
+                if (!course.getTeacher().getEmail().equals(userMail)) {
                     throw new RuntimeException("User not in course");
                 }
                 break;
             default:
                 throw new RuntimeException("Invalid user role");
         }
-        List<Document> documents=documentRepository.findAllByCourse(course);
+        List<Document> documents = documentRepository.findAllByCourse(course);
         return documents;
 
     }
-    public Document getDocumentDetail(Long documentId,String userMail) {
-        User user=userRepository.findByEmail(userMail).orElseThrow(()-> new RuntimeException("User not found"));
-        Document document=documentRepository.findById(documentId).orElseThrow(()-> new RuntimeException("Document not found"));
-        switch (user.getRole()){
+
+    public Document getDocumentDetail(Long documentId, String userMail) {
+        User user = userRepository.findByEmail(userMail).orElseThrow(() -> new RuntimeException("User not found"));
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+        switch (user.getRole()) {
             case STUDENT:
-                boolean isEnrolled=courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,document.getCourse(), com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
-                if(!isEnrolled){
+                boolean isEnrolled = courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,
+                        document.getCourse(), com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+                if (!isEnrolled) {
                     throw new RuntimeException("User not enrolled in course");
                 }
                 break;
             case TEACHER:
-                if(!document.getCourse().getTeacher().getEmail().equals(userMail)){
+                if (!document.getCourse().getTeacher().getEmail().equals(userMail)) {
                     throw new RuntimeException("User not in course");
                 }
                 break;
@@ -113,10 +134,12 @@ public class DocumentService {
         }
         return document;
     }
+
     public void deleteDocument(Long documentId, String userMail) {
-        User user=userRepository.findByEmail(userMail).orElseThrow(()-> new RuntimeException("User not found"));
-        Document document=documentRepository.findById(documentId).orElseThrow(()-> new RuntimeException("Document not found"));
-        if(!document.getUploader().getEmail().equals(userMail)){
+        User user = userRepository.findByEmail(userMail).orElseThrow(() -> new RuntimeException("User not found"));
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+        if (!document.getUploader().getEmail().equals(userMail)) {
             throw new RuntimeException("User not uploader");
         }
         try {

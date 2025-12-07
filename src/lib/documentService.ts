@@ -11,6 +11,8 @@ export interface Document {
   fileSize: number;
   uploadedBy: string;
   uploadedAt: string;
+  createdAt?: string;
+  fileExtension?: string;
 }
 
 export interface DocumentUploadData {
