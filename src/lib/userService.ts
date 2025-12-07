@@ -1,4 +1,4 @@
-// src/services/userService.ts
+﻿// src/services/userService.ts
 import api from "../lib/axios";
 import type {
   ApiResponse,
@@ -96,6 +96,18 @@ class UserService {
       `/users/${userId}/unlock`
     );
     return data.data;
+  }
+
+  /**
+   * PUT /api/users/changeInfo
+   * Update current user's personal information
+   * Required: Authenticated user
+   */
+  async updateUserInfo(name: string, phone: string): Promise<void> {
+    await api.put<ApiResponse<void>>("/users/changeInfo", {
+      name,
+      phone,
+    });
   }
 }
 

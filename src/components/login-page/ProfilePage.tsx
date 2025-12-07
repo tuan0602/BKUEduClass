@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { User } from '../../context/authContext';
+import { User, useAuth } from '../../context/authContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -10,12 +10,14 @@ import { Camera, Save } from 'lucide-react';
 import { changePassword } from '../../lib/auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from 'sonner';
+import userService from '../../lib/userService';
 
 interface ProfilePageProps {
   user: User;
 }
 
 export function ProfilePage({ user }: ProfilePageProps) {
+  const { updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user.avatar || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,15 +63,21 @@ export function ProfilePage({ user }: ProfilePageProps) {
     }
   };
 
-  const handleSaveProfile = () => {
-    if (!formData.name || !formData.email) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+  const handleSaveProfile = async () => {
+    if (!formData.name) {
+      toast.error('Vui lòng nhập họ và tên');
       return;
     }
     
-    // Mock save
-    setIsEditing(false);
-    toast.success('Thông tin cá nhân đã được lưu thành công!');
+    try {
+      await userService.updateUserInfo(formData.name, formData.phone);
+      // Cập nhật user trong AuthContext
+      updateUser({ name: formData.name, phone: formData.phone });
+      setIsEditing(false);
+      toast.success('Thông tin cá nhân đã được lưu thành công!');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể cập nhật thông tin');
+    }
   };
 
   const handleChangePassword = async () => {
@@ -196,15 +204,7 @@ export function ProfilePage({ user }: ProfilePageProps) {
 
                   <div className="space-y-2">
                     <Label>Email</Label>
-                    {isEditing ? (
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      />
-                    ) : (
-                      <p>{user.email}</p>
-                    )}
+                    <p>{user.email}</p>
                   </div>
 
                   <div className="space-y-2">

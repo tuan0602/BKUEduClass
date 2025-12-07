@@ -1,0 +1,15 @@
+﻿
+  /**
+   * PUT /api/users/changeInfo
+   * Update current user's personal information
+   * Required: Authenticated user
+   */
+  async updateUserInfo(name: string, phone: string): Promise<void> {
+    await api.put<ApiResponse<void>>("/users/changeInfo", {
+      name,
+      phone,
+    });
+  }
+}
+
+export default new UserService();

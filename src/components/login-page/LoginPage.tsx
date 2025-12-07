@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -10,6 +10,7 @@ import { useAuth } from '../../context/authContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   
   const [email, setEmail] = useState('');
@@ -42,7 +43,9 @@ export function LoginPage() {
         setError('Email hoặc mật khẩu không chính xác');
       } else {
         console.log("Login successful!");
-        // AuthContext sẽ tự động redirect đến dashboard
+        // Redirect to the page they tried to access or dashboard
+        const from = location.state?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
       }
     } catch (err) {
       console.error("Login error:", err);
