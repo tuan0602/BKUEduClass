@@ -13,23 +13,45 @@ import {
   Download,
   Loader2,
   Lock,
-  BarChart3
+  BarChart3,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useCourseDetail } from '../../hooks/useCourse';
 import { useDocument } from '../../hooks/useDocument';
+import { useAssignmentsByCourse } from '../../hooks/useAssignment';
 import { Progress } from '../ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { StatusAssignment } from '../../lib/assignmentService';
 
 export function CourseDetail() {
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
   const [searchMember, setSearchMember] = useState('');
+  const [assignmentPage, setAssignmentPage] = useState(0);
+  const [assignmentSearch, setAssignmentSearch] = useState('');
 
   // Fetch course detail
   const { data: courseDetail, isLoading, error } = useCourseDetail(Number(courseId));
   
   // Fetch documents
   const { documents, fetchDocuments, downloadDocument, loading: docsLoading } = useDocument();
+
+  // Fetch assignments (Student view - không có nút create/edit/delete)
+  const { 
+    data: assignmentsData, 
+    isLoading: assignmentsLoading,
+  } = useAssignmentsByCourse(
+    Number(courseId),
+    {
+      page: assignmentPage,
+      size: 10,
+      sort: 'createdAt,desc',
+      title: assignmentSearch || undefined
+    }
+  );
 
   // Load documents when courseId changes
   useEffect(() => {
@@ -38,10 +60,30 @@ export function CourseDetail() {
     }
   }, [courseId]);
 
-  // Debug documents data
-  useEffect(() => {
-    console.log('Documents data:', documents);
-  }, [documents]);
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Check if assignment is overdue
+  const isOverdue = (dueDate: string) => {
+    return new Date(dueDate) < new Date();
+  };
+
+  // Check if assignment is coming soon (within 3 days)
+  const isComingSoon = (dueDate: string) => {
+    const due = new Date(dueDate);
+    const now = new Date();
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 && diffDays <= 3;
+  };
 
   // Loading state
   if (isLoading) {
@@ -73,8 +115,6 @@ export function CourseDetail() {
   }
 
   const { course, students, data: stats, teacher } = courseDetail;
-  
-  // Use teacher from root level or fallback to course.teacher
   const courseTeacher = teacher || course.teacher;
 
   // Filter students for Members tab
@@ -82,6 +122,12 @@ export function CourseDetail() {
     student.name.toLowerCase().includes(searchMember.toLowerCase()) ||
     student.email.toLowerCase().includes(searchMember.toLowerCase())
   );
+
+  const assignments = assignmentsData?.result || [];
+  const assignmentsMeta = assignmentsData?.meta;
+
+  // Filter only published assignments for students
+  const publishedAssignments = assignments.filter(a => a.status === StatusAssignment.PUBLISHED);
 
   return (
     <div className="space-y-6">
@@ -106,7 +152,7 @@ export function CourseDetail() {
         </div>
       </div>
 
-      {/* Quick Stats for Students */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -160,13 +206,8 @@ export function CourseDetail() {
         <TabsList className="w-full grid grid-cols-5">
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="members">Thành viên</TabsTrigger>
-          <TabsTrigger value="documents">
-            Tài liệu
-          </TabsTrigger>
-          <TabsTrigger value="assignments" disabled>
-            <Lock className="w-3 h-3 mr-1" />
-            Bài tập
-          </TabsTrigger>
+          <TabsTrigger value="documents">Tài liệu</TabsTrigger>
+          <TabsTrigger value="assignments">Bài tập</TabsTrigger>
           <TabsTrigger value="discussions" disabled>
             <Lock className="w-3 h-3 mr-1" />
             Thảo luận
@@ -350,9 +391,7 @@ export function CourseDetail() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {documents.map((doc) => {
-                      console.log('Rendering doc:', doc.id, 'title:', doc.title);
-                      return (
+                    {documents.map((doc) => (
                       <TableRow key={doc.id}>
                         <TableCell className="font-medium">{doc.title}</TableCell>
                         <TableCell>
@@ -376,7 +415,7 @@ export function CourseDetail() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    )})}
+                    ))}
                   </TableBody>
                 </Table>
               )}
@@ -384,15 +423,136 @@ export function CourseDetail() {
           </Card>
         </TabsContent>
 
-        {/* Disabled Tabs - Assignments */}
+        {/* Assignments Tab - STUDENT VIEW */}
         <TabsContent value="assignments">
           <Card>
-            <CardContent className="py-12 text-center">
-              <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Tính năng đang phát triển</h3>
-              <p className="text-muted-foreground">
-                Quản lý bài tập sẽ sớm được cập nhật
-              </p>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Danh sách bài tập
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Search Bar */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm bài tập..."
+                  value={assignmentSearch}
+                  onChange={(e) => {
+                    setAssignmentSearch(e.target.value);
+                    setAssignmentPage(0);
+                  }}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              {/* Assignments List */}
+              {assignmentsLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : publishedAssignments.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>
+                    {assignmentSearch ? 'Không tìm thấy bài tập nào' : 'Chưa có bài tập nào được giao'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {publishedAssignments.map((assignment) => {
+                    const overdue = isOverdue(assignment.dueDate);
+                    const comingSoon = isComingSoon(assignment.dueDate);
+
+                    return (
+                      <div
+                        key={assignment.id}
+                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/courses/${courseId}/assignments/${assignment.id}/view`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold text-lg">{assignment.title}</h3>
+                              
+                              {overdue && (
+                                <Badge variant="destructive" className="flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  Quá hạn
+                                </Badge>
+                              )}
+                              
+                              {!overdue && comingSoon && (
+                                <Badge variant="default" className="flex items-center gap-1 bg-orange-500">
+                                  <Clock className="w-3 h-3" />
+                                  Sắp đến hạn
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            {assignment.description && (
+                              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                {assignment.description}
+                              </p>
+                            )}
+
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                <span>Giao: {formatDate(assignment.createdAt)}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className={`w-4 h-4 ${overdue ? 'text-destructive' : ''}`} />
+                                <span className={overdue ? 'text-destructive font-medium' : ''}>
+                                  Hạn nộp: {formatDate(assignment.dueDate)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="ml-4">
+                            <Button
+                              size="sm"
+                              variant={overdue ? "outline" : "default"}
+                            >
+                              Làm bài
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {assignmentsMeta && assignmentsMeta.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <div className="text-sm text-muted-foreground">
+                    Trang {assignmentsMeta.page + 1} / {assignmentsMeta.totalPages} 
+                    {' '}({publishedAssignments.length} bài tập)
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAssignmentPage(p => Math.max(0, p - 1))}
+                      disabled={assignmentsMeta.page === 0}
+                    >
+                      Trước
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAssignmentPage(p => p + 1)}
+                      disabled={assignmentsMeta.page >= assignmentsMeta.totalPages - 1}
+                    >
+                      Sau
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

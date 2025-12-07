@@ -1,4 +1,4 @@
-// src/services/courseService.ts
+// src/lib/courseService.ts
 import api from "../lib/axios";
 
 // ===========================

@@ -1,94 +1,185 @@
-import { useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { ArrowLeft, Upload, Download, Calendar, Award, FileText } from 'lucide-react';
-import { DEMO_ASSIGNMENTS, DEMO_SUBMISSIONS } from '../../lib/mockData';
-import { Textarea } from '../ui/textarea';
-import { Alert, AlertDescription } from '../ui/alert';
-import { toast } from 'sonner';
-import { Label } from '../ui/label';
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import {
+  ArrowLeft,
+  Calendar,
+  Award,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+} from "lucide-react";
+import { Alert, AlertDescription } from "../ui/alert";
+import { toast } from "sonner";
+import { Label } from "../ui/label";
+import { useAssignmentDetailForStudent } from "../../hooks/useAssignment";
+import { useSubmissionByAssignment, useSubmitSubmission } from "../../hooks/useSubmission";
+import { Answer } from "../../lib/assignmentService";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
+/**
+ * AssignmentDetail.tsx
+ * - Sửa để tương thích với ReponseDetailSubmissionDTO mới (FE side normalization)
+ * - An toàn với null/undefined
+ * - Không dùng các trường cũ (question.correct, answerData.correct, ...)
+ */
 
 export function AssignmentDetail() {
   const navigate = useNavigate();
   const { assignmentId } = useParams<{ assignmentId: string }>();
-  if (!assignmentId) {
-  return <div>Không tìm thấy bài tập</div>;
-}
-  const assignment = DEMO_ASSIGNMENTS.find(a => a.id === assignmentId);
-  const [submissionText, setSubmissionText] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!assignment) {
-    return <div>Không tìm thấy bài tập</div>;
-  }
+  // State để lưu đáp án đã chọn (key là questionId)
+  const [selectedAnswers, setSelectedAnswers] = useState<{ [questionId: number]: Answer }>({});
 
-  const getStatusInfo = (status: string) => {
-    const variants: { [key: string]: { variant: any; label: string; color: string } } = {
-      pending: { variant: 'default', label: 'Chưa nộp', color: 'text-orange-600' },
-      submitted: { variant: 'secondary', label: 'Đã nộp', color: 'text-blue-600' },
-      graded: { variant: 'default', label: 'Đã chấm', color: 'text-green-600' },
-      overdue: { variant: 'destructive', label: 'Quá hạn', color: 'text-red-600' }
-    };
-    return variants[status] || variants.pending;
+  // ===========================
+  // API CALLS
+  // ===========================
+
+  // Lấy chi tiết assignment
+  const {
+    data: assignment,
+    isLoading: isLoadingAssignment,
+    isError: isErrorAssignment,
+    error: errorAssignment,
+  } = useAssignmentDetailForStudent(assignmentId ? parseInt(assignmentId) : 0, !!assignmentId);
+
+  // Kiểm tra xem đã nộp bài chưa
+  // NOTE: useSubmissionByAssignment đã được chuẩn hoá để trả ReponseDetailSubmissionDTO với:
+  // - grade: number | undefined
+  // - submitted: boolean
+  // - answers: ResultAnswer[]
+  const {
+    data: existingSubmission,
+    isLoading: isLoadingSubmission,
+    refetch: refetchSubmission,
+  } = useSubmissionByAssignment(assignmentId ? parseInt(assignmentId) : 0, !!assignmentId);
+
+  // Mutation để nộp bài
+  const submitMutation = useSubmitSubmission();
+
+  // ===========================
+  // COMPUTED VALUES
+  // ===========================
+  const isLoading = isLoadingAssignment || isLoadingSubmission;
+  const hasSubmitted = existingSubmission !== null && existingSubmission !== undefined && existingSubmission.submitted === true;
+  const dueDate = assignment ? new Date(assignment.dueDate) : null;
+  const isOverdue = dueDate ? dueDate < new Date() : false;
+
+  // ===========================
+  // HANDLERS
+  // ===========================
+
+  const handleAnswerChange = (questionId: number, answer: Answer) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [questionId]: answer,
+    }));
   };
 
-  const statusInfo = getStatusInfo(assignment.status);
-  const dueDate = new Date(assignment.dueDate);
-  const isOverdue = dueDate < new Date();
+  const handleSubmit = async () => {
+    if (!assignment) return;
 
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
+    const answeredQuestions = Object.keys(selectedAnswers).length;
+    const totalQuestions = assignment.question.length;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('File quá lớn. Kích thước tối đa là 10MB');
-        return;
-      }
-      setUploadedFile(file);
-      toast.success(`Đã chọn file: ${file.name}`);
-    }
-  };
-
-  const handleSubmit = () => {
-    if (!uploadedFile) {
-      toast.error('Vui lòng chọn file để nộp bài');
+    if (answeredQuestions < totalQuestions) {
+      toast.error(`Vui lòng trả lời tất cả ${totalQuestions} câu hỏi (Đã trả lời: ${answeredQuestions})`);
       return;
     }
 
-    // Mock submission
-    setSubmitted(true);
-    toast.success('Nộp bài thành công!');
-    setTimeout(() => {
-      navigate('/assignments');
-    }, 1500);
+    if (!confirm("Bạn có chắc chắn muốn nộp bài? Sau khi nộp không thể thay đổi.")) {
+      return;
+    }
+
+    const submissionData = {
+      assignmentId: parseInt(assignmentId!),
+      answers: Object.entries(selectedAnswers).map(([questionId, answer]) => ({
+        questionId: parseInt(questionId),
+        answer: answer,
+      })),
+    };
+
+    console.log("📤 Submitting answers:", submissionData);
+
+    submitMutation.mutate(submissionData, {
+      onSuccess: () => {
+        // Mutation trả void theo hook hiện tại => chỉ refetch và hiển thị toast
+        toast.success("Nộp bài thành công!");
+        // Clear selected answers (nếu muốn)
+        setSelectedAnswers({});
+        // Refetch submission để hiển thị kết quả (backend phải đã lưu)
+        refetchSubmission();
+      },
+      onError: (err: any) => {
+        const errMsg = err?.response?.data?.message || err?.message || "Nộp bài thất bại";
+        toast.error(errMsg);
+      },
+    });
   };
 
-  const mySubmission = DEMO_SUBMISSIONS.find(s => s.assignmentId === assignmentId);
+  // ===========================
+  // LOADING / ERROR / NOT FOUND
+  // ===========================
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Đang tải thông tin bài tập...</p>
+        </div>
+      </div>
+    );
+  }
 
+  if (isErrorAssignment) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => navigate("/assignments")}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Quay lại danh sách bài tập
+        </Button>
+        <Alert variant="destructive">
+          <AlertDescription>
+            {errorAssignment?.message || "Không thể tải thông tin bài tập. Vui lòng thử lại sau."}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!assignment) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => navigate("/assignments")}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Quay lại danh sách bài tập
+        </Button>
+        <Alert>
+          <AlertDescription>Không tìm thấy bài tập</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Safe helpers for submission
+  const submissionAnswers = existingSubmission?.answers ?? [];
+  const gradeNumber = existingSubmission?.grade ?? undefined;
+
+  // ===========================
+  // RENDER
+  // ===========================
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Button variant="ghost" onClick={() => navigate('/assignments')} className="mb-4">
+        <Button variant="ghost" onClick={() => navigate("/assignments")} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại danh sách bài tập
         </Button>
       </div>
-
-      {submitted && (
-        <Alert className="bg-green-50 text-green-900 border-green-200">
-          <AlertDescription>Nộp bài thành công! Đang chuyển về danh sách bài tập...</AlertDescription>
-        </Alert>
-      )}
 
       {/* Assignment Info */}
       <Card>
@@ -97,157 +188,283 @@ export function AssignmentDetail() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <CardTitle>{assignment.title}</CardTitle>
-                <Badge variant={statusInfo.variant as any}>{statusInfo.label}</Badge>
+
+                {hasSubmitted && (
+                  <Badge variant="default" className="bg-green-600">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Đã nộp bài
+                  </Badge>
+                )}
+
+                {isOverdue && !hasSubmitted && (
+                  <Badge variant="destructive">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    Quá hạn
+                  </Badge>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground">{assignment.courseName}</p>
+
+              <p className="text-sm text-muted-foreground">
+                Tạo lúc:{" "}
+                {new Date(assignment.createdAt).toLocaleDateString("vi-VN", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })}
+              </p>
             </div>
+
             <div className="text-right">
               <div className="flex items-center gap-1 text-muted-foreground mb-1">
                 <Award className="w-4 h-4" />
-                <span>{assignment.maxScore} điểm</span>
+                <span>{assignment.question.length} câu hỏi</span>
               </div>
-              <div className={`flex items-center gap-1 text-sm ${isOverdue ? 'text-red-600' : 'text-muted-foreground'}`}>
+
+              <div className={`flex items-center gap-1 text-sm ${isOverdue ? "text-red-600" : "text-muted-foreground"}`}>
                 <Calendar className="w-4 h-4" />
-                <span>Hạn: {dueDate.toLocaleDateString('vi-VN', { 
-                  day: '2-digit', 
-                  month: '2-digit', 
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</span>
+                <span>
+                  Hạn:{" "}
+                  {dueDate?.toLocaleDateString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
             </div>
           </div>
         </CardHeader>
+
         <CardContent>
-          <div className="space-y-4">
+          {assignment.description && (
             <div>
-              <h3>Mô tả bài tập</h3>
-              <p className="text-muted-foreground mt-2">{assignment.description}</p>
+              <h3 className="font-semibold mb-2">Mô tả bài tập</h3>
+              <p className="text-muted-foreground">{assignment.description}</p>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* My Submission */}
-      {mySubmission ? (
+      {/* ===========================
+          NẾU ĐÃ NỘP BÀI - HIỂN THỊ KẾT QUẢ
+          =========================== */}
+      {hasSubmitted && existingSubmission ? (
         <Card>
           <CardHeader>
-            <CardTitle>Bài nộp của bạn</CardTitle>
+            <CardTitle>Kết quả bài làm</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm text-muted-foreground">Thời gian nộp</label>
-              <p>{new Date(mySubmission.submittedAt).toLocaleString('vi-VN')}</p>
+
+          <CardContent className="space-y-6">
+            {/* Thông tin điểm */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-4 bg-blue-50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground mb-1">Điểm số</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {/* gradeNumber có thể undefined -> hiển thị 0.0 */}
+                  {(gradeNumber ?? 0).toFixed(1)}/10
+                </p>
+              </div>
+
+              <div className="p-4 bg-green-50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground mb-1">Đúng</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {submissionAnswers.filter((a) => a.isCorrect).length}/{submissionAnswers.length}
+                </p>
+              </div>
+
+              <div className="p-4 bg-red-50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground mb-1">Sai</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {submissionAnswers.filter((a) => !a.isCorrect).length}/{submissionAnswers.length}
+                </p>
+              </div>
             </div>
-            {mySubmission.fileUrl && (
-              <div>
-                <label className="text-sm text-muted-foreground">File đã nộp</label>
-                <div className="flex items-center gap-2 mt-1 p-3 bg-gray-50 rounded-lg">
-                  <FileText className="w-5 h-5 text-primary" />
-                  <span className="flex-1">{mySubmission.fileName || mySubmission.fileUrl}</span>
-                  <Button size="sm" variant="ghost" onClick={() => toast.success('Đang tải xuống file...')}>
-                    <Download className="w-4 h-4" />
-                  </Button>
-                </div>
+
+            {/* Thời gian nộp */}
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-muted-foreground">Thời gian nộp</p>
+              <p className="font-medium">
+                {existingSubmission.submittedAt
+                  ? new Date(existingSubmission.submittedAt).toLocaleString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </p>
+            </div>
+
+            {/* Chi tiết từng câu hỏi */}
+            <div>
+              <h3 className="font-semibold mb-4">Chi tiết từng câu hỏi</h3>
+
+              <div className="space-y-4">
+                {submissionAnswers.map((answerData, index) => {
+                  const isCorrect = answerData.isCorrect;
+                  const userAnswer = answerData.answerOfUser;
+                  const questionText = answerData.questionContent;
+
+                  return (
+                    <Card key={index} className={`border-l-4 ${isCorrect ? "border-l-green-500" : "border-l-red-500"}`}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-start gap-3 mb-3">
+                          {isCorrect ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          )}
+
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant={isCorrect ? "default" : "destructive"} className="text-xs">
+                                Câu {index + 1}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {isCorrect ? "Đúng" : "Sai"}
+                              </Badge>
+                            </div>
+
+                            <p className="font-medium">{questionText}</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 pl-8">
+                          {(["A", "B", "C", "D"] as const).map((letter) => {
+                            const answerText = answerData[`answer${letter}` as keyof typeof answerData] as unknown as string;
+                            const isUserChoice = userAnswer === letter;
+
+                            return (
+                              <div
+                                key={letter}
+                                className={`p-3 rounded-lg border ${
+                                  isUserChoice ? (isCorrect ? "bg-green-50 border-green-300" : "bg-red-50 border-red-300") : "bg-white border-gray-200"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold">{letter}.</span>
+                                  <span>{answerText}</span>
+
+                                  {isUserChoice && (
+                                    <Badge variant={isCorrect ? "default" : "destructive"} className="ml-auto text-xs">
+                                      Bạn chọn
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-            )}
-            {mySubmission.notes && (
-              <div>
-                <label className="text-sm text-muted-foreground">Ghi chú của bạn</label>
-                <div className="mt-1 p-3 bg-gray-50 rounded-lg">
-                  <p>{mySubmission.notes}</p>
-                </div>
-              </div>
-            )}
-            {mySubmission.score !== undefined && (
-              <div>
-                <label className="text-sm text-muted-foreground">Điểm</label>
-                <p className="text-primary">{mySubmission.score}/{assignment.maxScore}</p>
-              </div>
-            )}
-            {mySubmission.feedback && (
-              <div>
-                <label className="text-sm text-muted-foreground">Nhận xét của giảng viên</label>
-                <div className="mt-1 p-3 bg-blue-50 rounded-lg">
-                  <p>{mySubmission.feedback}</p>
-                </div>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       ) : (
-        // Submit Assignment Form
+        /* ===========================
+            CHƯA NỘP BÀI - HIỂN THỊ FORM LÀM BÀI
+            =========================== */
         <Card>
           <CardHeader>
-            <CardTitle>Nộp bài tập</CardTitle>
+            <CardTitle>Làm bài tập</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Upload file bài làm *</Label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.doc,.docx,.zip"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              {uploadedFile ? (
-                <div className="border-2 border-primary rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-8 h-8 text-primary" />
-                    <div className="flex-1">
-                      <p>{uploadedFile.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {(uploadedFile.size / 1024).toFixed(2)} KB
-                      </p>
+
+          <CardContent className="space-y-6">
+            {isOverdue && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Bài tập này đã quá hạn nộp. Bạn vẫn có thể làm bài nhưng có thể bị trừ điểm.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Danh sách câu hỏi */}
+            <div className="space-y-6">
+              {assignment.question.map((q, index) => (
+                <Card key={q.questionId} className="border-2">
+                  <CardContent className="pt-6">
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">Câu {index + 1}</Badge>
+                      </div>
+                      <p className="font-medium text-lg">{q.question}</p>
                     </div>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => {
-                        setUploadedFile(null);
-                        toast.info('Đã xóa file');
-                      }}
+
+                    <RadioGroup
+                      value={selectedAnswers[q.questionId] ?? ""}
+                      onValueChange={(value) => handleAnswerChange(q.questionId, value as Answer)}
                     >
-                      Xóa
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-                  onClick={handleFileSelect}
-                >
-                  <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">Kéo và thả file hoặc</p>
-                  <Button variant="outline" type="button">Chọn file</Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Hỗ trợ: PDF, DOC, DOCX, ZIP (Tối đa 10MB)
-                  </p>
-                </div>
-              )}
+                      <div className="space-y-3">
+                        {(["A", "B", "C", "D"] as Answer[]).map((letter) => {
+                          // @ts-ignore - q[`answer${letter}`] dynamic access
+                          const answerText = q[`answer${letter}`];
+                          const isSelected = selectedAnswers[q.questionId] === letter;
+
+                          return (
+                            <div
+                              key={letter}
+                              className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-colors cursor-pointer ${
+                                isSelected ? "border-primary bg-primary/5" : "border-gray-200 hover:border-gray-300"
+                              }`}
+                              onClick={() => handleAnswerChange(q.questionId, letter)}
+                            >
+                              <RadioGroupItem value={letter} id={`q${q.questionId}-${letter}`} />
+                              <Label htmlFor={`q${q.questionId}-${letter}`} className="flex-1 cursor-pointer font-normal">
+                                <span className="font-semibold mr-2">{letter}.</span>
+                                {answerText}
+                              </Label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </RadioGroup>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
-            <div className="space-y-2">
-              <Label>Ghi chú (tùy chọn)</Label>
-              <Textarea
-                placeholder="Nhập ghi chú về bài làm của bạn..."
-                value={submissionText}
-                onChange={(e) => setSubmissionText(e.target.value)}
-                rows={4}
-              />
+            {/* Progress indicator */}
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Tiến độ làm bài</span>
+                <span className="text-sm text-muted-foreground">
+                  {Object.keys(selectedAnswers).length}/{assignment.question.length} câu
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all"
+                  style={{
+                    width: `${(Object.keys(selectedAnswers).length / assignment.question.length) * 100}%`,
+                  }}
+                />
+              </div>
             </div>
 
+            {/* Submit button */}
             <div className="flex gap-2">
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 className="bg-primary flex-1"
-                disabled={isOverdue || !uploadedFile}
+                disabled={submitMutation.isPending || Object.keys(selectedAnswers).length < assignment.question.length}
               >
-                {isOverdue ? 'Đã quá hạn' : 'Nộp bài'}
+                {submitMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Đang nộp bài...
+                  </>
+                ) : (
+                  "Nộp bài"
+                )}
               </Button>
-              <Button variant="outline" onClick={() => navigate('/assignments')}>
+              <Button variant="outline" onClick={() => navigate("/assignments")}>
                 Hủy
               </Button>
             </div>

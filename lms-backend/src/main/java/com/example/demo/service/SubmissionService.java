@@ -112,9 +112,10 @@ public class SubmissionService {
             throw new RuntimeException("User not found");
         }
         Submission submission=submissionRepository.findByAssignmentAndStudent(assignment,user).orElse(null);
-        if (submission==null){
-            throw new RuntimeException("Submission not found");
-        }
+        if (submission == null) {
+        // Trả về DTO rỗng báo rằng user chưa nộp bài
+        return ReponseDetailSubmissionDTO.empty();
+    }
 
         switch (user.getRole()){
             case STUDENT:

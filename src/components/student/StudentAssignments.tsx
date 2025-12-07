@@ -1,3 +1,5 @@
+// src/components/student/StudentAssignments.tsx
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -5,17 +7,19 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Search, Calendar, Award, BookOpen, Loader2 } from 'lucide-react';
-import { User } from '../../context/authContext';
-import api from '../../lib/axios';
+import { User } from '../../context/AuthContext';
+import courseService from '../../lib/courseService';
+import assignmentService from '../../lib/assignmentService';
+import submissionService from '../../lib/submissionService';
 
 interface StudentAssignmentsProps {
   user: User;
 }
 
-interface Assignment {
-  assignmentId: string; 
+interface EnrichedAssignment {
+  assignmentId: number;
   title: string;
-  courseId: string;
+  courseId: number;
   courseName: string;
   dueDate: string;
   status: 'pending' | 'submitted' | 'graded' | 'overdue';
@@ -27,52 +31,113 @@ interface Assignment {
 export function StudentAssignments({ user }: StudentAssignmentsProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignments, setAssignments] = useState<EnrichedAssignment[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch assignments từ API
   useEffect(() => {
-    const fetchAssignments = async () => {
+    const fetchAllData = async () => {
       try {
-        const res = await api.get<Assignment[]>(`/students/${user.userId}/assignments`);
-        setAssignments(res.data);
-      } catch (error) {
-        console.error('Failed to fetch assignments:', error);
+        const coursesData = await courseService.getCourses({ size: 100 });
+
+        if (!coursesData?.result) {
+          setLoading(false);
+          return;
+        }
+
+        const allAssignments: EnrichedAssignment[] = [];
+
+        for (const course of coursesData.result) {
+          try {
+            const assignmentsData =
+              await assignmentService.getAssignmentsByCourseId(course.id, {
+                page: 0,
+                size: 100,
+              });
+
+            const courseAssignments = assignmentsData.result || [];
+
+            for (const assignment of courseAssignments) {
+              let status: 'pending' | 'submitted' | 'graded' | 'overdue' = 'pending';
+              let score: number | undefined;
+
+              // ⭐⭐⭐ SỬA LỖI Ở ĐÂY ⭐⭐⭐
+              try {
+                const submission =
+                  await submissionService.getSubmissionByAssignmentId(assignment.id);
+
+                if (submission.submitted === true) {
+                  status = 'graded';
+                  score = submission.grade ?? undefined;
+                } else {
+                  status = 'pending';
+                }
+              } catch {
+                status = 'pending';
+              }
+
+              // Nếu chưa nộp → kiểm tra quá hạn
+              if (status === 'pending') {
+                const dueDate = new Date(assignment.dueDate);
+                if (dueDate < new Date()) {
+                  status = 'overdue';
+                }
+              }
+
+              allAssignments.push({
+                assignmentId: assignment.id,
+                title: assignment.title,
+                courseId: course.id,
+                courseName: course.name,
+                dueDate: assignment.dueDate,
+                status,
+                maxScore: 10,
+                score,
+                description: assignment.description,
+              });
+            }
+          } catch (err) {
+            console.error(`Error fetching assignments for course ${course.id}:`, err);
+          }
+        }
+
+        setAssignments(allAssignments);
+      } catch (err) {
+        console.error('Error:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAssignments();
-  }, [user.userId]);
+    fetchAllData();
+  }, []);
 
-  const filteredAssignments = assignments.filter(assignment =>
+  const filteredAssignments = assignments.filter((assignment) =>
     assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     assignment.courseName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const pendingAssignments = filteredAssignments.filter(a => a.status === 'pending');
-  const submittedAssignments = filteredAssignments.filter(a => a.status === 'submitted');
-  const gradedAssignments = filteredAssignments.filter(a => a.status === 'graded');
-  const overdueAssignments = filteredAssignments.filter(a => a.status === 'overdue');
+  const pendingAssignments = filteredAssignments.filter((a) => a.status === 'pending');
+  const submittedAssignments = filteredAssignments.filter((a) => a.status === 'submitted');
+  const gradedAssignments = filteredAssignments.filter((a) => a.status === 'graded');
+  const overdueAssignments = filteredAssignments.filter((a) => a.status === 'overdue');
 
   const getStatusInfo = (status: string) => {
-    const variants: { [key: string]: { variant: any; label: string; color: string } } = {
-      pending: { variant: 'default', label: 'Chưa nộp', color: 'bg-orange-100' },
-      submitted: { variant: 'secondary', label: 'Đã nộp', color: 'bg-blue-100' },
-      graded: { variant: 'default', label: 'Đã chấm', color: 'bg-green-100' },
-      overdue: { variant: 'destructive', label: 'Quá hạn', color: 'bg-red-100' }
+    const variants: any = {
+      pending: { variant: 'default', label: 'Chưa nộp' },
+      submitted: { variant: 'secondary', label: 'Đã nộp' },
+      graded: { variant: 'default', label: 'Đã chấm' },
+      overdue: { variant: 'destructive', label: 'Quá hạn' },
     };
     return variants[status] || variants.pending;
   };
 
-  const renderAssignmentCard = (assignment: Assignment) => {
+  const renderAssignmentCard = (assignment: EnrichedAssignment) => {
     const statusInfo = getStatusInfo(assignment.status);
     const dueDate = new Date(assignment.dueDate);
 
     return (
-      <Card 
-        key={assignment.assignmentId} 
+      <Card
+        key={assignment.assignmentId}
         className="cursor-pointer hover:shadow-lg transition-shadow"
         onClick={() => navigate(`/assignments/${assignment.assignmentId}`)}
       >
@@ -81,7 +146,7 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-semibold">{assignment.title}</h3>
-                <Badge variant={statusInfo.variant as any}>{statusInfo.label}</Badge>
+                <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <BookOpen className="w-4 h-4" />
@@ -101,12 +166,12 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
             </div>
           </div>
 
-          {assignment.status === 'graded' && assignment.score !== undefined && (
+          {assignment.status === 'graded' && typeof assignment.score === 'number' && (
             <div className="mt-3 pt-3 border-t">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Điểm số:</span>
                 <span className="font-semibold text-green-600">
-                  {assignment.score}/{assignment.maxScore}
+                  {assignment.score.toFixed(1)}/{assignment.maxScore}
                 </span>
               </div>
             </div>
@@ -131,7 +196,6 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
         <p className="text-muted-foreground">Quản lý và theo dõi các bài tập</p>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
@@ -204,9 +268,7 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
             {pendingAssignments.map(renderAssignmentCard)}
           </div>
           {pendingAssignments.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              Không có bài tập chưa nộp
-            </div>
+            <div className="text-center py-12 text-muted-foreground">Không có bài tập chưa nộp</div>
           )}
         </TabsContent>
 
@@ -215,9 +277,7 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
             {submittedAssignments.map(renderAssignmentCard)}
           </div>
           {submittedAssignments.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              Chưa có bài tập nào đã nộp
-            </div>
+            <div className="text-center py-12 text-muted-foreground">Chưa có bài tập nào đã nộp</div>
           )}
         </TabsContent>
 
@@ -226,9 +286,7 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
             {gradedAssignments.map(renderAssignmentCard)}
           </div>
           {gradedAssignments.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              Chưa có bài tập nào đã chấm
-            </div>
+            <div className="text-center py-12 text-muted-foreground">Chưa có bài tập nào đã chấm</div>
           )}
         </TabsContent>
 
@@ -237,9 +295,7 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
             {overdueAssignments.map(renderAssignmentCard)}
           </div>
           {overdueAssignments.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              Không có bài tập quá hạn
-            </div>
+            <div className="text-center py-12 text-muted-foreground">Không có bài tập quá hạn</div>
           )}
         </TabsContent>
       </Tabs>
