@@ -16,9 +16,21 @@ export interface ResultAnswer {
 export interface ReponseDetailSubmissionDTO {
   submissionId: number | null;
   submittedAt: string | null;
-  grade: number | undefined; // 🔥 avoid null
+  grade: number | undefined;
   submitted: boolean;
   answers: ResultAnswer[];
+}
+
+// 🆕 DTO cho danh sách submissions của assignment
+export interface SubmissionListItemDTO {
+  submissionId: number;
+  studentId: number;
+  studentName: string;
+  studentEmail: string;
+  submittedAt: string;
+  grade: number | null;
+  totalQuestions: number;
+  correctAnswers: number;
 }
 
 export interface SubmitAnswerDTO {
@@ -36,6 +48,14 @@ export interface ApiResponse<T> {
   message: string;
   data: T;
   error: string | null;
+}
+
+export interface PaginatedResponse<T> {
+  result: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 }
 
 // =======================
@@ -95,6 +115,17 @@ const submissionService = {
       return false;
     }
   },
-};
 
+  // 🆕 Lấy danh sách submissions của assignment (cho teacher)
+  // 🆕 Lấy danh sách submissions của assignment (cho teacher)
+getSubmissionsByAssignment: async (
+  assignmentId: number
+): Promise<SubmissionListItemDTO[]> => {
+  const response = await api.get<ApiResponse<SubmissionListItemDTO[]>>(
+    `/teacher/assignments/${assignmentId}/submissions`
+  );
+  return response.data.data;
+},
+
+};
 export default submissionService;

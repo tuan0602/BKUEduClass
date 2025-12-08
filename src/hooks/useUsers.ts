@@ -29,6 +29,10 @@ export function useUsers(params?: GetUsersParams) {
   return useQuery({
     queryKey: userKeys.list(params),
     queryFn: () => userService.getUsers(params),
+    // ✅ THÊM: Refetch khi window focus để luôn có data mới nhất
+    refetchOnWindowFocus: true,
+    // ✅ THÊM: Stale time ngắn để data update nhanh
+    staleTime: 0,
   });
 }
 
@@ -69,6 +73,7 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: (data: CreateUserRequest) => userService.createUser(data),
     onSuccess: () => {
+      // ✅ Invalidate TẤT CẢ queries liên quan đến users
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       toast.success('Tạo người dùng thành công');
     },
@@ -85,8 +90,30 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: ({ userId, data }: { userId: string; data: UpdateUserRequest }) =>
       userService.updateUser(userId, data),
-    onSuccess: () => {
+    onSuccess: (updatedUser, variables) => {
+      // ✅ OPTION 1: Invalidate để refetch (đơn giản nhất)
       queryClient.invalidateQueries({ queryKey: userKeys.all });
+      
+      // ✅ OPTION 2: Update cache trực tiếp (nhanh hơn, không cần refetch)
+      // Uncomment phần này nếu muốn update ngay không cần refetch
+      /*
+      queryClient.setQueriesData(
+        { queryKey: userKeys.all },
+        (oldData: any) => {
+          if (!oldData?.result) return oldData;
+          
+          return {
+            ...oldData,
+            result: oldData.result.map((user: User) =>
+              user.userId === variables.userId
+                ? { ...user, ...variables.data }
+                : user
+            ),
+          };
+        }
+      );
+      */
+      
       toast.success('Cập nhật người dùng thành công');
     },
     onError: (error: any) => {

@@ -1,37 +1,43 @@
 import { useState, useRef } from 'react';
-import { User, useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import {  } from '../../lib/mockData';
-import { Camera, Save } from 'lucide-react';
-import { changePassword } from '../../lib/auth';
+import { Camera, Save, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from 'sonner';
 import userService from '../../lib/userService';
+import api from '../../lib/axios';
 
-interface ProfilePageProps {
-  user: User;
-}
-
-export function ProfilePage({ user }: ProfilePageProps) {
-  const { updateUser } = useAuth();
+export function ProfilePage() {
+  const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(user.avatar || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
-    phone: user.phone || '',
+    name: user?.name || '',
+    phone: user?.phone || '',
   });
+  
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [isChanging, setIsChanging] = useState(false);
+  
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -39,9 +45,9 @@ export function ProfilePage({ user }: ProfilePageProps) {
 
   const getRoleLabel = (role: string) => {
     const labels: { [key: string]: string } = {
-      admin: 'Quản trị viên',
-      teacher: 'Giảng viên',
-      student: 'Sinh viên'
+      ADMIN: 'Quản trị viên',
+      TEACHER: 'Giảng viên',
+      STUDENT: 'Sinh viên'
     };
     return labels[role] || role;
   };
@@ -50,38 +56,88 @@ export function ProfilePage({ user }: ProfilePageProps) {
     fileInputRef.current?.click();
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, upload to server
+    if (!file) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      toast.error('Kích thước ảnh không được vượt quá 5MB');
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+      
+      // OPTION 1: Upload to server (nếu backend có endpoint)
+      // Uncomment này nếu bạn có API upload avatar
+      /*
+      const formData = new FormData();
+      formData.append('avatar', file);
+      
+      const response = await api.post('/users/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      const newAvatarUrl = response.data.data.avatarUrl;
+      setAvatarUrl(newAvatarUrl);
+      updateUser({ avatar: newAvatarUrl });
+      */
+      
+      // OPTION 2: Convert to base64 (temporary - for now)
       const reader = new FileReader();
       reader.onload = (event) => {
-        setAvatarUrl(event.target?.result as string);
+        const newAvatarUrl = event.target?.result as string;
+        setAvatarUrl(newAvatarUrl);
+        updateUser({ avatar: newAvatarUrl });
         toast.success('Ảnh đại diện đã được cập nhật');
       };
       reader.readAsDataURL(file);
+      
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể tải ảnh lên');
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
   const handleSaveProfile = async () => {
-    if (!formData.name) {
+    if (!formData.name.trim()) {
       toast.error('Vui lòng nhập họ và tên');
       return;
     }
     
     try {
+      setIsSavingProfile(true);
+      
+      // ✅ Gọi API PUT /users/changeInfo
       await userService.updateUserInfo(formData.name, formData.phone);
-      // Cập nhật user trong AuthContext
-      updateUser({ name: formData.name, phone: formData.phone });
+      
+      // ✅ Cập nhật AuthContext
+      updateUser({ 
+        name: formData.name, 
+        phone: formData.phone 
+      });
+      
       setIsEditing(false);
       toast.success('Thông tin cá nhân đã được lưu thành công!');
+      
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể cập nhật thông tin');
+      const message = error?.response?.data?.message || 'Không thể cập nhật thông tin';
+      toast.error(message);
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
   const handleChangePassword = async () => {
-    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+    // Validation
+    if (!passwordData.newPassword || !passwordData.confirmPassword) {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
@@ -97,25 +153,41 @@ export function ProfilePage({ user }: ProfilePageProps) {
     }
 
     try {
-      setIsChanging(true);
-      const resp = await changePassword(passwordData.newPassword);
-      if (resp.success) {
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        toast.success(resp.message || 'Mật khẩu đã được thay đổi thành công!');
-      } else {
-        toast.error(resp.message || 'Không thể đổi mật khẩu');
-      }
-    } catch (err: any) {
-      toast.error(err?.message || 'Lỗi khi đổi mật khẩu');
+      setIsChangingPassword(true);
+      
+      // ✅ Gọi API POST /auth/reset-password
+      await api.post('/auth/reset-password', null, {
+        params: { newPassword: passwordData.newPassword }
+      });
+      
+      // Clear form
+      setPasswordData({ 
+        newPassword: '', 
+        confirmPassword: '' 
+      });
+      
+      toast.success('Mật khẩu đã được thay đổi thành công!');
+      
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Không thể đổi mật khẩu';
+      toast.error(message);
     } finally {
-      setIsChanging(false);
+      setIsChangingPassword(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setFormData({
+      name: user.name,
+      phone: user.phone || '',
+    });
+    setIsEditing(false);
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1>Hồ sơ cá nhân</h1>
+        <h1 className="text-3xl font-bold">Hồ sơ cá nhân</h1>
         <p className="text-muted-foreground">Quản lý thông tin cá nhân và cài đặt tài khoản</p>
       </div>
 
@@ -137,18 +209,27 @@ export function ProfilePage({ user }: ProfilePageProps) {
                   accept="image/*"
                   className="hidden"
                   onChange={handleAvatarChange}
+                  disabled={isUploadingAvatar}
                 />
                 <Button 
                   size="icon" 
                   className="absolute bottom-0 right-0 rounded-full"
                   variant="secondary"
                   onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
                 >
-                  <Camera className="w-4 h-4" />
+                  {isUploadingAvatar ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
-              <h2 className="mt-4">{user.name}</h2>
+              <h2 className="mt-4 text-xl font-semibold">{user.name}</h2>
               <p className="text-muted-foreground">{getRoleLabel(user.role)}</p>
+              <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
+              
+              {/* ✅ Hiển thị studentId hoặc teacherId nếu có */}
               {user.studentId && (
                 <p className="text-sm text-muted-foreground mt-1">Mã SV: {user.studentId}</p>
               )}
@@ -170,11 +251,23 @@ export function ProfilePage({ user }: ProfilePageProps) {
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button onClick={() => setIsEditing(false)} variant="outline">
+                  <Button 
+                    onClick={handleCancelEdit} 
+                    variant="outline"
+                    disabled={isSavingProfile}
+                  >
                     Hủy
                   </Button>
-                  <Button onClick={handleSaveProfile} className="bg-primary">
-                    <Save className="w-4 h-4 mr-2" />
+                  <Button 
+                    onClick={handleSaveProfile} 
+                    className="bg-primary"
+                    disabled={isSavingProfile}
+                  >
+                    {isSavingProfile ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
                     Lưu
                   </Button>
                 </div>
@@ -188,23 +281,24 @@ export function ProfilePage({ user }: ProfilePageProps) {
                 <TabsTrigger value="security">Bảo mật</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="info" className="space-y-4">
+              <TabsContent value="info" className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Họ và tên</Label>
+                    <Label>Họ và tên *</Label>
                     {isEditing ? (
                       <Input
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Nhập họ và tên"
                       />
                     ) : (
-                      <p>{user.name}</p>
+                      <p className="text-sm py-2">{user.name}</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
                     <Label>Email</Label>
-                    <p>{user.email}</p>
+                    <p className="text-sm py-2 text-muted-foreground">{user.email}</p>
                   </div>
 
                   <div className="space-y-2">
@@ -213,67 +307,79 @@ export function ProfilePage({ user }: ProfilePageProps) {
                       <Input
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="Nhập số điện thoại"
                       />
                     ) : (
-                      <p>{user.phone || 'Chưa cập nhật'}</p>
+                      <p className="text-sm py-2">{user.phone || 'Chưa cập nhật'}</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
                     <Label>Vai trò</Label>
-                    <p>{getRoleLabel(user.role)}</p>
+                    <p className="text-sm py-2">{getRoleLabel(user.role)}</p>
                   </div>
 
+                  {/* ✅ Hiển thị studentId nếu là STUDENT */}
                   {user.studentId && (
                     <div className="space-y-2">
                       <Label>Mã sinh viên</Label>
-                      <p>{user.studentId}</p>
+                      <p className="text-sm py-2">{user.studentId}</p>
                     </div>
                   )}
 
+                  {/* ✅ Hiển thị teacherId nếu là TEACHER */}
                   {user.teacherId && (
                     <div className="space-y-2">
                       <Label>Mã giảng viên</Label>
-                      <p>{user.teacherId}</p>
+                      <p className="text-sm py-2">{user.teacherId}</p>
                     </div>
                   )}
                 </div>
               </TabsContent>
 
-              <TabsContent value="security" className="space-y-4">
+              <TabsContent value="security" className="space-y-4 mt-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Mật khẩu hiện tại</Label>
+                    <Label>Mật khẩu mới *</Label>
                     <Input
                       type="password"
-                      placeholder="••••••••"
-                      value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Mật khẩu mới</Label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
+                      placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
                       value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      onChange={(e) => setPasswordData({ 
+                        ...passwordData, 
+                        newPassword: e.target.value 
+                      })}
+                      disabled={isChangingPassword}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Xác nhận mật khẩu mới</Label>
+                    <Label>Xác nhận mật khẩu mới *</Label>
                     <Input
                       type="password"
-                      placeholder="••••••••"
+                      placeholder="Nhập lại mật khẩu mới"
                       value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      onChange={(e) => setPasswordData({ 
+                        ...passwordData, 
+                        confirmPassword: e.target.value 
+                      })}
+                      disabled={isChangingPassword}
                     />
                   </div>
 
-                  <Button onClick={handleChangePassword} className="bg-primary" disabled={isChanging}>
-                    Đổi mật khẩu
+                  <Button 
+                    onClick={handleChangePassword} 
+                    className="bg-primary" 
+                    disabled={isChangingPassword}
+                  >
+                    {isChangingPassword ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Đang xử lý...
+                      </>
+                    ) : (
+                      'Đổi mật khẩu'
+                    )}
                   </Button>
                 </div>
               </TabsContent>

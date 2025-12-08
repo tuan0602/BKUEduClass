@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import submissionService, {
   SubmitSubmissionDTO,
   ReponseDetailSubmissionDTO,
+  SubmissionListItemDTO,
+  PaginatedResponse,
 } from "../lib/submissionService";
 import { toast } from "sonner";
 
@@ -17,6 +19,13 @@ export const submissionKeys = {
     ...submissionKeys.all,
     "assignment",
     assignmentId,
+  ] as const,
+  // 🆕 Key cho danh sách submissions của assignment
+  listByAssignment: (assignmentId: number, params?: any) => [
+    ...submissionKeys.all,
+    "list",
+    assignmentId,
+    params,
   ] as const,
 };
 
@@ -78,6 +87,20 @@ export const useCheckSubmissionExists = (
   });
 };
 
+// 🆕 Lấy danh sách submissions của assignment (cho teacher)
+// 🆕 Lấy danh sách submissions của assignment (cho teacher)
+export const useSubmissionsByAssignment = (
+  assignmentId: number,
+  enabled: boolean = true
+) => {
+  return useQuery<SubmissionListItemDTO[], Error>({
+    queryKey: submissionKeys.listByAssignment(assignmentId),
+    queryFn: () => submissionService.getSubmissionsByAssignment(assignmentId),
+    enabled: enabled && assignmentId > 0,
+    staleTime: 1000 * 60 * 3,
+  });
+};
+
 // ===========================
 // MUTATION HOOKS
 // ===========================
@@ -97,6 +120,11 @@ export const useSubmitSubmission = () => {
       // Invalidate submission của assignment
       queryClient.invalidateQueries({
         queryKey: submissionKeys.byAssignment(variables.assignmentId),
+      });
+
+      // 🆕 Invalidate danh sách submissions
+      queryClient.invalidateQueries({
+        queryKey: submissionKeys.listByAssignment(variables.assignmentId),
       });
 
       toast.success("Nộp bài thành công!");
@@ -145,3 +173,4 @@ export const usePrefetchSubmissionByAssignment = () => {
     });
   };
 };
+

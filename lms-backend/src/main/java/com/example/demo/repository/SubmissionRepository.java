@@ -8,10 +8,11 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-
+import java.util.List;
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long>, JpaSpecificationExecutor<Submission> {
     boolean existsByAssignmentAndStudent(Assignment assignment, User user);
     Optional<Submission> findByAssignmentAndStudent(Assignment assignment, User user);
+    List<Submission> findByAssignmentId(Long assignmentId);
 
 }

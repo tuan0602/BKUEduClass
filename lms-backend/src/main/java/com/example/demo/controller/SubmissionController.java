@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.request.submission.SubmitSubmissionDTO;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.dto.response.submissionDTO.ReponseDetailSubmissionDTO;
+import com.example.demo.dto.response.submissionDTO.SubmissionListItemDTO;
 import com.example.demo.service.AssignmentService;
 import com.example.demo.service.SubmissionService;
 import com.example.demo.util.SecurityUtil;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -108,4 +110,19 @@ public class SubmissionController {
         );
         return ResponseEntity.ok().body(response);
     }
+    @GetMapping("/teacher/assignments/{assignmentId}/submissions")
+@PreAuthorize("hasRole('TEACHER')")
+public ResponseEntity<ApiResponse<List<SubmissionListItemDTO>>> getSubmissionsByAssignment(
+        @PathVariable Long assignmentId) {
+
+    List<SubmissionListItemDTO> result = submissionService.getSubmissionsByAssignment(assignmentId);
+
+    ApiResponse<List<SubmissionListItemDTO>> response = new ApiResponse<>(
+            HttpStatus.OK,
+            "Fetched submissions successfully",
+            result,
+            null
+    );
+    return ResponseEntity.ok(response);
+}
 }

@@ -4,6 +4,7 @@ import com.example.demo.domain.*;
 import com.example.demo.domain.enumeration.StatusAssignment;
 import com.example.demo.dto.request.submission.SubmitSubmissionDTO;
 import com.example.demo.dto.response.submissionDTO.ReponseDetailSubmissionDTO;
+import com.example.demo.dto.response.submissionDTO.SubmissionListItemDTO;
 import com.example.demo.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -133,5 +134,32 @@ public class SubmissionService {
         }
         return ReponseDetailSubmissionDTO.fromSubmission(submission);
     }
+    public List<SubmissionListItemDTO> getSubmissionsByAssignment(Long assignmentId) {
+    List<Submission> submissions = submissionRepository.findByAssignmentId(assignmentId);
 
+    List<SubmissionListItemDTO> result = new ArrayList<>();
+
+    for (Submission submission : submissions) {
+        if (submission.getStudent() == null) continue; // bỏ qua nếu student null
+        if (submission.getAnswerOfSubmissions() == null) submission.setAnswerOfSubmissions(new ArrayList<>());
+
+        int total = submission.getAnswerOfSubmissions().size();
+        int correct = (int) submission.getAnswerOfSubmissions().stream()
+                .filter(answer -> answer.isCorrect())
+                .count();
+
+        SubmissionListItemDTO dto = new SubmissionListItemDTO(
+                submission.getStudent().getName(),
+                submission.getStudent().getEmail(),
+                submission.getSubmittedAt(),
+                submission.getGrade(),
+                correct,
+                total
+        );
+
+        result.add(dto);
     }
+
+    return result;
+}
+}

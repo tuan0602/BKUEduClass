@@ -9,7 +9,9 @@ import {
   fetchAssignmentsByCourse,
   useAssignmentDetail,
 } from '../../hooks/useAssignment';
+import submissionService, { SubmissionListItemDTO } from '../../lib/submissionService';
 import { useCourses } from '../../hooks/useCourse';
+import { useSubmissionsByAssignment } from '../../hooks/useSubmission';
 import { CreateAssignmentDTO, StatusAssignment } from '../../lib/assignmentService';
 import { DEMO_SUBMISSIONS, Submission } from '../../lib/mockData';
 import { User } from '../../context/AuthContext';
@@ -18,7 +20,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Search, Plus, Edit, Trash2, Eye, Loader2, Calendar } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -46,7 +48,10 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
   // ===========================
   // API HOOKS
   // ===========================
-
+const { data: submissions, isLoading: isLoadingSubmissions } = useSubmissionsByAssignment(
+  selectedAssignment || 0,
+  gradeDialogOpen
+);
   const { data: assignmentDetail, isLoading: isLoadingDetail } = useAssignmentDetail(
     editingAssignmentId || 0,
     editingAssignmentId !== null
@@ -377,7 +382,6 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
                   <TableHead>Lớp học</TableHead>
                   <TableHead>Hạn nộp</TableHead>
                   <TableHead>Trạng thái</TableHead>
-                  <TableHead>Bài nộp</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -399,25 +403,14 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
                       </TableCell>
                       <TableCell>{assignment.courseName}</TableCell>
                       <TableCell>
-                        <div className={`flex items-center gap-1 text-sm ${
-                            isOverdue ? 'text-red-600 font-semibold' : 'text-muted-foreground'
-                          }`}>
-                            <Calendar className="w-3 h-3" />
-                            {dueDate.toLocaleDateString('vi-VN')}
-                          </div>
+                        <span className={isOverdue ? 'text-red-600' : ''}>
+                          {dueDate.toLocaleDateString('vi-VN')}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <Badge variant={assignment.status === 'PUBLISHED' ? 'default' : 'secondary'}>
                           {assignment.status === 'PUBLISHED' ? 'Đang mở' : 'Bản nháp'}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span>{stats.graded}/{stats.total}</span>
-                          {stats.total > 0 && stats.total - stats.graded > 0 && (
-                            <Badge variant="secondary">{stats.total - stats.graded} chờ chấm</Badge>
-                          )}
-                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -466,58 +459,52 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
       </Card>
 
       {/* Grade Dialog */}
-      <Dialog open={gradeDialogOpen} onOpenChange={setGradeDialogOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] max-h-[80vh!important] flex flex-col overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Danh sách bài nộp và chấm điểm</DialogTitle>
-            <DialogDescription>
-              Xem và chấm điểm bài nộp của sinh viên
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sinh viên</TableHead>
-                  <TableHead>Thời gian nộp</TableHead>
-                  <TableHead>Điểm</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assignmentSubmissions.map((submission: any) => (
-                  <TableRow key={submission.id}>
-                    <TableCell>{submission.studentName}</TableCell>
-                    <TableCell>
-                      {new Date(submission.submittedAt).toLocaleString('vi-VN')}
-                    </TableCell>
-                    <TableCell>
-                      {submission.score !== undefined ? submission.score : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={submission.status === 'graded' ? 'default' : 'secondary'}>
-                        {submission.status === 'graded' ? 'Đã chấm' : 'Chưa chấm'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="outline" onClick={() => handleOpenSubmission(submission)}>
-                        Xem chi tiết
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {assignmentSubmissions.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Chưa có bài nộp nào
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+            <Dialog open={gradeDialogOpen} onOpenChange={setGradeDialogOpen}>
+  <DialogContent className="max-w-4xl h-[80vh] flex flex-col overflow-hidden">
+    <DialogHeader>
+      <DialogTitle>Danh sách bài nộp</DialogTitle>
+      <DialogDescription>
+        Sinh viên đã nộp bài và điểm số
+      </DialogDescription>
+    </DialogHeader>
 
+    <div className="py-4 overflow-y-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Sinh viên</TableHead>
+            <TableHead>Thời gian nộp</TableHead>
+            <TableHead>Điểm</TableHead>
+            <TableHead>Trạng thái</TableHead>
+          </TableRow>
+        </TableHeader>
+
+        <TableBody>
+          {submissions && submissions.length > 0 ? (
+            submissions.map((s: SubmissionListItemDTO) => (
+              <TableRow key={s.submissionId}>
+                <TableCell>{s.studentName}</TableCell>
+                <TableCell>{new Date(s.submittedAt).toLocaleString('vi-VN')}</TableCell>
+                <TableCell>{s.grade !== null ? s.grade : '-'}</TableCell>
+                <TableCell>
+                  <Badge variant={s.grade !== null ? 'default' : 'secondary'}>
+                    {s.grade !== null ? 'Đã chấm' : 'Chưa chấm'}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                Chưa có bài nộp nào
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  </DialogContent>
+</Dialog>
       {/* Submission Dialog */}
       <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
         <DialogContent className="max-w-4xl h-[80vh] max-h-[80vh!important] flex flex-col overflow-hidden">

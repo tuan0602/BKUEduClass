@@ -1,4 +1,4 @@
-// src/types/user.types.ts
+// src/lib/user.types.ts
 
 export enum Role {
   ADMIN = "ADMIN",
@@ -12,7 +12,7 @@ export interface ApiResponse<T> {
   message: string;
   data: T;
   error: string | null;
-  timestamp: string;
+  timestamp?: string;
 }
 
 // ============= Pagination =============
@@ -34,13 +34,16 @@ export interface User {
   role: Role;
   avatar?: string;
   phone?: string;
-  locked: boolean;
-  createdAt: string;
-  // Role-specific fields
-  department?: string; // Teacher
-  major?: string; // Student
-  year?: number; // Student
-  className?: string; // Student
+  locked?: boolean;
+  createdAt?: string;
+  
+  // Teacher specific fields
+  department?: string;
+  
+  // Student specific fields
+  major?: string;
+  year?: number;
+  className?: string;
 }
 
 export interface CreateUserRequest {
@@ -49,11 +52,12 @@ export interface CreateUserRequest {
   name: string;
   role: Role;
   phone?: string;
+  
   // Role-specific fields
-  department?: string;
-  major?: string;
-  year?: number;
-  className?: string;
+  department?: string;  // Teacher
+  major?: string;       // Student
+  year?: number;        // Student
+  className?: string;   // Student
 }
 
 export interface UpdateUserRequest {
@@ -61,7 +65,10 @@ export interface UpdateUserRequest {
   name?: string;
   role?: Role;
   phone?: string;
-
+  department?: string;
+  major?: string;
+  year?: number;
+  className?: string;
 }
 
 // ============= Query Params =============

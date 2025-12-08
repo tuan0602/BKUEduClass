@@ -53,6 +53,7 @@ D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\ResLoginDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\ResultPaginationDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\submissionDTO\ReponseDetailSubmissionDTO.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\submissionDTO\SubmissionListItemDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\userDTO\ResUserDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\AnswerOfSubmissionRepository.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\repository\AssignmentRepository.java

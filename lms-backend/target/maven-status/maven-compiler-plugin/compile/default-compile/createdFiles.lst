@@ -21,7 +21,6 @@ com\example\demo\dto\response\ApiResponse.class
 com\example\demo\dto\response\assignmentDTO\ReponseAssignmentDTO.class
 com\example\demo\dto\response\ResLoginDTO.class
 com\example\demo\controller\AuthController.class
-com\example\demo\service\SubmissionService.class
 com\example\demo\service\DocumentService.class
 com\example\demo\domain\enumeration\Answer.class
 com\example\demo\dto\request\auth\RequestLoginDTO.class
@@ -50,7 +49,6 @@ com\example\demo\repository\CourseEnrollmentRepository.class
 com\example\demo\DemoApplication.class
 com\example\demo\domain\UserProfile.class
 com\example\demo\repository\QuestionRepository.class
-com\example\demo\controller\SubmissionController.class
 com\example\demo\dto\response\courseDTO\ReponseCourseDTO.class
 com\example\demo\service\AssignmentService$1.class
 com\example\demo\dto\response\ResLoginDTO$UserInsideToken.class

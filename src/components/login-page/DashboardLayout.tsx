@@ -43,6 +43,8 @@ export function DashboardLayout({ user, children, onLogout }: DashboardLayoutPro
         { id: 'dashboard', label: 'Tổng quan', icon: BarChart3, path: '/dashboard' },
         { id: 'courses', label: 'Lớp học của tôi', icon: BookOpen, path: '/courses' },
         { id: 'assignments', label: 'Bài tập', icon: FileText, path: '/assignments' },
+        { id: 'documents', label: 'Tài liệu', icon: FileText, path: '/documents' },
+        { id: 'discussions', label: 'Thảo luận', icon: MessageSquare, path: '/discussions' },
         { id: 'reports', label: 'Báo cáo học tập', icon: BarChart3, path: '/reports' },
         { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle, path: '/profile' }
       ];
@@ -51,7 +53,10 @@ export function DashboardLayout({ user, children, onLogout }: DashboardLayoutPro
         { id: 'dashboard', label: 'Tổng quan', icon: BarChart3, path: '/teacher/dashboard' },
         { id: 'courses', label: 'Quản lý lớp học', icon: BookOpen, path: '/teacher/courses' },
         { id: 'assignments', label: 'Quản lý bài tập', icon: FileText, path: '/teacher/assignments' },
+        { id: 'documents', label: 'Quản lý tài liệu', icon: FileText, path: '/teacher/documents' },
         { id: 'students', label: 'Quản lý sinh viên', icon: Users, path: '/teacher/students' },
+        { id: 'discussions', label: 'Thảo luận', icon: MessageSquare, path: '/teacher/discussions' },
+        { id: 'reports', label: 'Thống kê lớp học', icon: BarChart3, path: '/teacher/reports' },
         { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle, path: '/profile' }
       ];
     } else if (user.role === 'ADMIN') {
@@ -59,7 +64,6 @@ export function DashboardLayout({ user, children, onLogout }: DashboardLayoutPro
         { id: 'dashboard', label: 'Tổng quan', icon: BarChart3, path: '/admin/dashboard' },
         { id: 'users', label: 'Quản lý người dùng', icon: Users, path: '/admin/users' },
         { id: 'courses', label: 'Quản lý lớp học', icon: BookOpen, path: '/admin/courses' },
-        { id: 'reports', label: 'Thống kê hệ thống', icon: BarChart3, path: '/admin/reports' },
         { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle, path: '/profile' },
       ];
     }
@@ -171,12 +175,6 @@ export function DashboardLayout({ user, children, onLogout }: DashboardLayoutPro
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </Button>
-
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
