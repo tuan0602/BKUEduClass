@@ -200,14 +200,23 @@ export function StudentReports({ user }: StudentReportsProps) {
                 const progress = course.progressData?.submissionRate ?? 0;
                 const completed = course.progressData?.numberSubmissions ?? 0;
                 const total = course.progressData?.numberAssignments ?? 0;
+                // Lấy điểm từ AverageGrade hoặc averageGrade
+                const averageGrade = (course.progressData?.AverageGrade ?? course.progressData?.averageGrade ?? 0) as number;
                 // Nếu 0/0 thì hiển thị 100%
                 const displayProgress = total === 0 ? 100 : progress;
+                // Hiển thị NaN nếu chưa có submission
+                const gradeDisplay = completed === 0 ? 'NaN' : averageGrade.toFixed(1);
                 
                 return (
                   <div key={course.id}>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <p className="text-sm font-medium">{course.courseName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">{course.courseName}</p>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                            {gradeDisplay}/10
+                          </span>
+                        </div>
                         <p className="text-xs text-muted-foreground">{course.courseCode}</p>
                       </div>
                       <span className="text-sm text-primary whitespace-nowrap ml-2">

@@ -222,6 +222,31 @@ const assignmentService = {
     throw error;
   }
 },
+
+  /**
+   * GET /api/student/assignments
+   * Lấy danh sách assignments của student hiện tại
+   * Requires: Bearer Token + STUDENT role
+   */
+  getStudentAssignments: async (params?: GetAssignmentsParams): Promise<DashboardAssignment[]> => {
+    const response = await api.get<ApiResponse<{ result: DashboardAssignment[] }>>(
+      `/student/assignments`,
+      {
+        params: {
+          page: params?.page || 0,
+          size: params?.size || 100,
+          sort: params?.sort || "dueDate,asc",
+        },
+      }
+    );
+    return response.data.data.result || [];
+  },
 };
+
+export interface DashboardAssignment extends AssignmentListItem {
+  courseName?: string;
+  submitted?: boolean; // Đã nộp bài hay chưa
+  score?: number; // Điểm số nếu đã được chấm
+}
 
 export default assignmentService;

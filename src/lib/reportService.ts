@@ -18,7 +18,8 @@ export interface ApiResponse<T> {
 }
 
 export interface CourseProgressData {
-  AverageGrade: number;
+  AverageGrade?: number;
+  averageGrade?: number;
   numberCourse: number;
   numberAssignments: number;
   numberSubmissions: number;
@@ -59,7 +60,9 @@ export const getStudentCourseProgress = async (courseId: number): Promise<Course
         Authorization: `Bearer ${token}`,
       },
     });
-    return response.data.data;
+    const data = response.data.data;
+    console.log(`Course ${courseId} progress data:`, data);
+    return data;
   } catch (error) {
     console.error(`Error fetching course ${courseId} progress:`, error);
     throw error;

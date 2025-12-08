@@ -1,31 +1,156 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { BookOpen, FileText, CheckCircle, Clock } from 'lucide-react';
-import { User } from '../../context/authContext';
-import { DEMO_COURSES, DEMO_ASSIGNMENTS, COURSE_ENROLLMENTS } from '../../lib/mockData';
+import { User } from '../../context/AuthContext';
 import { Progress } from '../ui/progress';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { getStudentReport, StudentReportData } from '../../lib/reportService';
+import courseService from '../../lib/courseService';
+import assignmentService from '../../lib/assignmentService';
+import submissionService from '../../lib/submissionService';
+import { toast } from 'sonner';
 
 interface StudentDashboardProps {
   user: User;
 }
 
+interface DashboardAssignment {
+  assignmentId: number;
+  title: string;
+  courseId: number;
+  courseName: string;
+  dueDate: string;
+  status: 'pending' | 'submitted' | 'graded' | 'overdue';
+  score?: number;
+}
+
 export function StudentDashboard({ user }: StudentDashboardProps) {
   const navigate = useNavigate();
-  const id = user.userId;
-  const myCourses = DEMO_COURSES.filter(course => 
-    COURSE_ENROLLMENTS[course.id]?.includes(id)
-  );
+  const [loading, setLoading] = useState(true);
+  const [reportData, setReportData] = useState<StudentReportData | null>(null);
+  const [assignments, setAssignments] = useState<DashboardAssignment[]>([]);
 
-  const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>
-    myCourses.some(course => course.id === assignment.courseId)
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch student report
+        const report = await getStudentReport();
+        setReportData(report);
 
-  const pendingAssignments = myAssignments.filter(a => a.status === 'pending').length;
-  const completedAssignments = myAssignments.filter(a => a.status === 'submitted' || a.status === 'graded').length;
-  const overdueAssignments = myAssignments.filter(a => a.status === 'overdue').length;
-  const completionRate = myAssignments.length > 0 
-    ? Math.round((completedAssignments / myAssignments.length) * 100) 
-    : 0;
+        // Fetch courses and assignments (giống StudentAssignments)
+        const coursesData = await courseService.getCourses({ size: 100 });
+        
+        if (!coursesData?.result) {
+          setLoading(false);
+          return;
+        }
+
+        const allAssignments: DashboardAssignment[] = [];
+
+        for (const course of coursesData.result) {
+          try {
+            const assignmentsData = await assignmentService.getAssignmentsByCourseId(course.id, {
+              page: 0,
+              size: 100,
+            });
+
+            const courseAssignments = assignmentsData.result || [];
+
+            for (const assignment of courseAssignments) {
+              let status: 'pending' | 'submitted' | 'graded' | 'overdue' = 'pending';
+              let score: number | undefined;
+
+              try {
+                const submission = await submissionService.getSubmissionByAssignmentId(assignment.id);
+
+                if (submission.submitted === true) {
+                  status = 'graded';
+                  score = submission.grade ?? undefined;
+                } else {
+                  status = 'pending';
+                }
+              } catch {
+                status = 'pending';
+              }
+
+              // Nếu chưa nộp → kiểm tra quá hạn
+              if (status === 'pending') {
+                const dueDate = new Date(assignment.dueDate);
+                if (dueDate < new Date()) {
+                  status = 'overdue';
+                }
+              }
+
+              allAssignments.push({
+                assignmentId: assignment.id,
+                title: assignment.title,
+                courseId: course.id,
+                courseName: course.name,
+                dueDate: assignment.dueDate,
+                status,
+                score,
+              });
+            }
+          } catch (err) {
+            console.error(`Error fetching assignments for course ${course.id}:`, err);
+          }
+        }
+
+        setAssignments(allAssignments);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast.error('Không thể tải dữ liệu');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-gray-100 rounded w-1/3"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate stats from API data
+  const numberCourses = reportData?.numberCourse ?? 0;
+  const numberAssignments = reportData?.numberAssignments ?? 0;
+  const numberSubmissions = reportData?.numberSubmissions ?? 0;
+  const submissionRate = reportData?.submissionRate ?? 0;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Bài tập quá hạn = status === 'overdue'
+  const overdueAssignments = assignments.filter((a: DashboardAssignment) => {
+    return a.status === 'overdue';
+  });
+  
+  // Bài tập sắp tới hạn = còn 1-7 ngày và chưa nộp (pending)
+  const upcomingAssignments = assignments.filter((a: DashboardAssignment) => {
+    if (a.status !== 'pending') return false;
+    const dueDate = new Date(a.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    const oneWeekFromNow = new Date(today);
+    oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+    return dueDate >= today && dueDate <= oneWeekFromNow;
+  });
+  
+  // Bài tập chờ = tất cả bài pending (chưa nộp và chưa quá hạn)
+  const pendingAssignments = assignments.filter((a: DashboardAssignment) => {
+    return a.status === 'pending';
+  });
+  
+  const completionRate = Math.round(submissionRate);
 
   return (
     <div className="space-y-6">
@@ -43,7 +168,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
             <BookOpen className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{myCourses.length}</div>
+            <div className="text-primary">{numberCourses}</div>
             <p className="text-xs text-muted-foreground mt-1">Đang tham gia</p>
           </CardContent>
         </Card>
@@ -54,7 +179,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
             <Clock className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{pendingAssignments}</div>
+            <div className="text-primary">{pendingAssignments.length}</div>
             <p className="text-xs text-muted-foreground mt-1">Cần hoàn thành</p>
           </CardContent>
         </Card>
@@ -65,7 +190,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
             <CheckCircle className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{completedAssignments}</div>
+            <div className="text-primary">{numberSubmissions}</div>
             <p className="text-xs text-muted-foreground mt-1">Bài tập</p>
           </CardContent>
         </Card>
@@ -76,7 +201,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
             <FileText className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{overdueAssignments}</div>
+            <div className="text-primary">{overdueAssignments.length}</div>
             <p className="text-xs text-muted-foreground mt-1">Bài tập</p>
           </CardContent>
         </Card>
@@ -98,15 +223,15 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <div className="text-primary">{completedAssignments}</div>
+                <div className="text-primary">{numberSubmissions}</div>
                 <div className="text-muted-foreground">Đã nộp</div>
               </div>
               <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                <div className="text-primary">{pendingAssignments}</div>
+                <div className="text-primary">{pendingAssignments.length}</div>
                 <div className="text-muted-foreground">Chưa nộp</div>
               </div>
               <div className="text-center p-3 bg-red-50 rounded-lg">
-                <div className="text-primary">{overdueAssignments}</div>
+                <div className="text-primary">{overdueAssignments.length}</div>
                 <div className="text-muted-foreground">Quá hạn</div>
               </div>
             </div>
@@ -114,63 +239,68 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
         </CardContent>
       </Card>
 
-      {/* Recent Courses */}
+      {/* Overdue Assignments */}
       <Card>
         <CardHeader>
-          <CardTitle>Lớp học gần đây</CardTitle>
+          <CardTitle>Bài tập quá hạn</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {myCourses.slice(0, 3).map(course => (
+            {overdueAssignments.map((assignment: DashboardAssignment) => (
               <div
-                key={course.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                onClick={() => navigate(`/courses/${course.id}`)}
+                key={assignment.assignmentId}
+                className="flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer transition-colors border border-red-200"
+                onClick={() => navigate(`/assignments/${assignment.assignmentId}`)}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div>{course.name}</div>
-                    <div className="text-sm text-muted-foreground">{course.teacherName}</div>
-                  </div>
+                <div className="flex-1">
+                  <div className="font-medium">{assignment.title}</div>
+                  <div className="text-sm text-muted-foreground">{assignment.courseName || 'Unknown Course'}</div>
                 </div>
-                <div className="text-sm text-muted-foreground">{course.code}</div>
+                <div className="text-sm text-red-600 font-medium">
+                  Quá: {new Date(assignment.dueDate).toLocaleDateString('vi-VN')}
+                </div>
               </div>
             ))}
+            {overdueAssignments.length === 0 && (
+              <div className="text-center py-6 text-muted-foreground">
+                Không có bài tập quá hạn
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Upcoming Assignments */}
+      {/* Upcoming Assignments (Due within 1 week) */}
       <Card>
         <CardHeader>
-          <CardTitle>Bài tập sắp đến hạn</CardTitle>
+          <CardTitle>Bài tập sắp tới hạn (còn 1 tuần)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {myAssignments
-              .filter(a => a.status === 'pending')
-              .slice(0, 3)
-              .map(assignment => (
+            {upcomingAssignments.map((assignment: DashboardAssignment) => {
+              const dueDate = new Date(assignment.dueDate);
+              dueDate.setHours(0, 0, 0, 0);
+              const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              
+              return (
                 <div
-                  key={assignment.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                  onClick={() => navigate(`/assignments/${assignment.id}`)}
+                  key={assignment.assignmentId}
+                  className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 cursor-pointer transition-colors border border-yellow-200"
+                  onClick={() => navigate(`/assignments/${assignment.assignmentId}`)}
                 >
                   <div className="flex-1">
-                    <div>{assignment.title}</div>
-                    <div className="text-sm text-muted-foreground">{assignment.courseName}</div>
+                    <div className="font-medium">{assignment.title}</div>
+                    <div className="text-sm text-muted-foreground">{assignment.courseName || 'Unknown Course'}</div>
                   </div>
-                  <div className="text-sm text-orange-600">
-                    Hạn: {new Date(assignment.dueDate).toLocaleDateString('vi-VN')}
+                  <div className="text-sm text-orange-600 font-medium">
+                    Còn {daysUntilDue} ngày
                   </div>
                 </div>
-              ))}
-            {myAssignments.filter(a => a.status === 'pending').length === 0 && (
+              );
+            })}
+            {upcomingAssignments.length === 0 && (
               <div className="text-center py-6 text-muted-foreground">
-                Không có bài tập nào sắp đến hạn
+                Không có bài tập nào sắp tới hạn
               </div>
             )}
           </div>
