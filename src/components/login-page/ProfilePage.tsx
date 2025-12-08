@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { User, useAuth } from '../../context/authContext';
+import { User, useAuth } from '../../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -281,63 +281,6 @@ export function ProfilePage({ user }: ProfilePageProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Additional Stats */}
-      {user.role === 'STUDENT' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Thống kê học tập</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-primary mb-1">3</div>
-                <div className="text-sm text-muted-foreground">Lớp học</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-primary mb-1">12</div>
-                <div className="text-sm text-muted-foreground">Bài tập đã nộp</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-primary mb-1">85%</div>
-                <div className="text-sm text-muted-foreground">Tỷ lệ hoàn thành</div>
-              </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-primary mb-1">3.45</div>
-                <div className="text-sm text-muted-foreground">GPA</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {user.role === 'TEACHER' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Thống kê giảng dạy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-primary mb-1">3</div>
-                <div className="text-sm text-muted-foreground">Lớp học</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-primary mb-1">21</div>
-                <div className="text-sm text-muted-foreground">Sinh viên</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-primary mb-1">5</div>
-                <div className="text-sm text-muted-foreground">Bài tập đã giao</div>
-              </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-primary mb-1">4</div>
-                <div className="text-sm text-muted-foreground">Tài liệu đã upload</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

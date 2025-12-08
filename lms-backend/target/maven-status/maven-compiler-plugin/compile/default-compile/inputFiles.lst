@@ -39,6 +39,7 @@ D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\auth\RequestLoginDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\course\CourseDTO.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\submission\SubmitSubmissionDTO.java
+D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\user\ChangeUserInfoRequest.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\user\CreateUserRequest.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\request\user\UpdateUserRequest.java
 D:\TaiLieu\Mybk\DoAnTongHop\HeThongQuanLyLopHoc\BKUEduClass\lms-backend\src\main\java\com\example\demo\dto\response\ApiResponse.java

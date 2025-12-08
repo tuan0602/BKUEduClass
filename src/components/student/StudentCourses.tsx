@@ -147,14 +147,10 @@ const handleJoinCourse = () => {
               </div>
               <CardHeader>
                 <CardTitle className="line-clamp-2">{course.name}</CardTitle>
-                <CardDescription>{course.teacher?.name || 'Chưa có giảng viên'}</CardDescription>
+                <CardDescription>Giảng viên: {course.teacher?.name || 'Chưa có giảng viên'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Tiến độ</span>
-                    <span className="text-primary">{progress}%</span>
-                  </div>
                   <Progress value={progress} className="h-2" />
                   
                   <div className="flex items-center justify-between text-sm pt-2">

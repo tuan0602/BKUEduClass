@@ -153,7 +153,7 @@ export function CourseDetail() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Bài tập</CardTitle>
@@ -188,30 +188,15 @@ export function CourseDetail() {
             <p className="text-xs text-muted-foreground">Của bạn</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Thảo luận</CardTitle>
-            <MessageSquare className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{stats.discussionsCount}</div>
-            <p className="text-xs text-muted-foreground">Bài viết</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full grid grid-cols-5">
+        <TabsList className="w-full grid grid-cols-4">
           <TabsTrigger value="overview">Tổng quan</TabsTrigger>
           <TabsTrigger value="members">Thành viên</TabsTrigger>
           <TabsTrigger value="documents">Tài liệu</TabsTrigger>
           <TabsTrigger value="assignments">Bài tập</TabsTrigger>
-          <TabsTrigger value="discussions" disabled>
-            <Lock className="w-3 h-3 mr-1" />
-            Thảo luận
-          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -469,7 +454,7 @@ export function CourseDetail() {
                       <div
                         key={assignment.id}
                         className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/courses/${courseId}/assignments/${assignment.id}/view`)}
+                        onClick={() => navigate(`/assignments/${assignment.id}`)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">

@@ -60,7 +60,6 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
               let status: 'pending' | 'submitted' | 'graded' | 'overdue' = 'pending';
               let score: number | undefined;
 
-              // ⭐⭐⭐ SỬA LỖI Ở ĐÂY ⭐⭐⭐
               try {
                 const submission =
                   await submissionService.getSubmissionByAssignmentId(assignment.id);
@@ -207,7 +206,7 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Chưa nộp</CardTitle>
@@ -218,18 +217,10 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Đã nộp</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{submittedAssignments.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Đã chấm</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{gradedAssignments.length}</div>
+            <div className="text-2xl font-bold text-primary">{gradedAssignments.length} / {assignments.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -244,10 +235,9 @@ export function StudentAssignments({ user }: StudentAssignmentsProps) {
 
       {/* Tabs */}
       <Tabs defaultValue="all">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="all">Tất cả</TabsTrigger>
           <TabsTrigger value="pending">Chưa nộp</TabsTrigger>
-          <TabsTrigger value="submitted">Đã nộp</TabsTrigger>
           <TabsTrigger value="graded">Đã chấm</TabsTrigger>
           <TabsTrigger value="overdue">Quá hạn</TabsTrigger>
         </TabsList>

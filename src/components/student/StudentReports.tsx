@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { User } from '../../context/authContext';
+import { User } from '../../context/AuthContext';
 import { DEMO_COURSES, DEMO_ASSIGNMENTS, COURSE_ENROLLMENTS } from '../../lib/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { TrendingUp, Award, BookOpen, CheckCircle } from 'lucide-react';
