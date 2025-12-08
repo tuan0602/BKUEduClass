@@ -1,9 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.Assignment;
-import com.example.demo.domain.Course;
-import com.example.demo.domain.Question;
-import com.example.demo.domain.User;
+import com.example.demo.domain.*;
 import com.example.demo.domain.enumeration.StatusAssignment;
 import com.example.demo.dto.request.assignment.CreateAssignmentDTO;
 import com.example.demo.dto.response.assignmentDTO.ReponseAssignmentForStudentDTO;
@@ -30,6 +27,7 @@ public class AssignmentService {
     final private CourseRepository courseRepository;
     final private QuestionRepository questionRepository;
     final private CourseEnrollmentRepository courseEnrollmentRepository;
+    final private SubmissionRepository submissionRepository;
     private void validateTeacher(Course course, String currentUserEmail) {
         User teacher= course.getTeacher();
         if (course.getTeacher() == null) {
@@ -74,7 +72,8 @@ public class AssignmentService {
             throw new ResourceNotFoundException("Assignment not found");
         }
         validateTeacher(assignment.getCourse(), currentUserEmail);
-
+        List<Submission> submissions= assignment.getSubmissions();
+        submissionRepository.deleteAll(submissions);
         List<Question> questions = assignment.getQuestions();
         questionRepository.deleteAll(questions);
         assignmentRepository.deleteById(assignmentId);
