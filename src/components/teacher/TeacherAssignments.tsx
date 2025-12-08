@@ -18,7 +18,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Search, Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Loader2, Calendar } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -399,9 +399,12 @@ export function TeacherAssignments({ user }: TeacherAssignmentsProps) {
                       </TableCell>
                       <TableCell>{assignment.courseName}</TableCell>
                       <TableCell>
-                        <span className={isOverdue ? 'text-red-600' : ''}>
-                          {dueDate.toLocaleDateString('vi-VN')}
-                        </span>
+                        <div className={`flex items-center gap-1 text-sm ${
+                            isOverdue ? 'text-red-600 font-semibold' : 'text-muted-foreground'
+                          }`}>
+                            <Calendar className="w-3 h-3" />
+                            {dueDate.toLocaleDateString('vi-VN')}
+                          </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={assignment.status === 'PUBLISHED' ? 'default' : 'secondary'}>

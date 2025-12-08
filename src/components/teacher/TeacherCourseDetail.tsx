@@ -73,7 +73,6 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
   const { courseId } = useParams<{ courseId: string }>();
   const [searchStudent, setSearchStudent] = useState('');
   const [searchAssignment, setSearchAssignment] = useState('');
-
   // Fetch course detail
   const { data: courseDetail, isLoading, error } = useCourseDetail(Number(courseId));
 
@@ -85,11 +84,14 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
     data: assignmentsData, 
     isLoading: assignmentsLoading 
   } = useAssignmentsByCourse(Number(courseId), { page: 1, size: 100 });
-
   const createAssignmentMutation = useCreateAssignment();
   const updateAssignmentMutation = useUpdateAssignment();
   const deleteAssignmentMutation = useDeleteAssignment();
-
+  
+  // Check if due date is overdue
+   const isOverdue = (dueDate: string) => {
+    return new Date(dueDate) < new Date();
+  };
   // Document upload states
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadTitle, setUploadTitle] = useState('');
@@ -318,7 +320,8 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
 
   const { course, students, data: stats } = courseDetail;
   const assignments = assignmentsData?.result || [];
-
+  const totalPossibleSubmissions = stats.studentsCount * stats.totalAssignments;
+  const submittedCount = Math.round((stats.submissionRate / 100) * totalPossibleSubmissions);
   // Filter students
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchStudent.toLowerCase()) ||
@@ -415,10 +418,6 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
           </TabsTrigger>
           <TabsTrigger value="documents" className="flex-1 min-w-[100px]">
             Tài liệu
-          </TabsTrigger>
-          <TabsTrigger value="discussions" className="flex-1 min-w-[100px]" disabled>
-            <Lock className="w-3 h-3 mr-1" />
-            Thảo luận
           </TabsTrigger>
         </TabsList>
 
@@ -607,7 +606,7 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
                       </div>
                       <Progress value={stats.submissionRate} className="h-2" />
                       <p className="text-xs text-muted-foreground">
-                        {stats.submittedAssignments} / {stats.studentsCount * stats.totalAssignments} bài đã nộp
+                        {submittedCount} bài đã nộp
                       </p>
                     </div>
                   </div>
@@ -619,55 +618,65 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
 
         {/* Assignments Tab */}
         <TabsContent value="assignments">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle>Quản lý bài tập ({assignments.length})</CardTitle>
-              <Button size="sm" onClick={openCreateAssignmentDialog}>
-                <Plus className="w-4 h-4 mr-1" />
-                Tạo bài tập mới
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Tìm kiếm bài tập..."
-                    value={searchAssignment}
-                    onChange={(e) => setSearchAssignment(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle>Quản lý bài tập ({assignments.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Tìm kiếm bài tập..."
+                  value={searchAssignment}
+                  onChange={(e) => setSearchAssignment(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
 
-                {assignmentsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  </div>
-                ) : filteredAssignments.length === 0 ? (
-                  <div className="text-center py-12">
-                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      {searchAssignment ? 'Không tìm thấy bài tập' : 'Chưa có bài tập nào'}
-                    </p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Tiêu đề</TableHead>
-                        <TableHead>Hạn nộp</TableHead>
-                        <TableHead>Điểm tối đa</TableHead>
-                        <TableHead>Ngày tạo</TableHead>
-                        <TableHead className="text-right">Thao tác</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredAssignments.map((assignment: any) => (
+              {assignmentsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : filteredAssignments.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    {searchAssignment ? 'Không tìm thấy bài tập' : 'Chưa có bài tập nào'}
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tiêu đề</TableHead>
+                      <TableHead>Hạn nộp</TableHead>
+                      <TableHead>Điểm tối đa</TableHead>
+                      <TableHead>Ngày tạo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAssignments.map((assignment: any) => {
+                      const isLate = isOverdue(assignment.dueDate);
+                      
+                      return (
                         <TableRow key={assignment.id}>
-                          <TableCell className="font-medium">{assignment.title}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {assignment.title}
+                              {isLate && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Quá hạn
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          
                           <TableCell>
                             {assignment.dueDate ? (
-                              <div className="flex items-center gap-1 text-sm">
+                              <div className={`flex items-center gap-1 text-sm ${
+                                isLate ? 'text-red-600 font-semibold' : 'text-muted-foreground'
+                              }`}>
                                 <Calendar className="w-3 h-3" />
                                 {formatDate(assignment.dueDate)}
                               </div>
@@ -675,154 +684,24 @@ export function TeacherCourseDetail({ user }: TeacherCourseDetailProps) {
                               <span className="text-muted-foreground">Không có</span>
                             )}
                           </TableCell>
+                          
                           <TableCell>
-                            <Badge variant="outline">{assignment.maxScore} điểm</Badge>
+                            <Badge variant="outline">10 điểm</Badge>
                           </TableCell>
+                          
                           <TableCell className="text-sm text-muted-foreground">
                             {formatDate(assignment.createdAt)}
                           </TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => navigate(`/teacher/assignments/${assignment.id}`)}
-                            >
-                              <FileText className="w-4 h-4 mr-1" />
-                              Chi tiết
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditAssignmentDialog(assignment)}
-                            >
-                              <Edit className="w-4 h-4 mr-1" />
-                              Sửa
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => openDeleteAssignmentDialog(assignment)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-1" />
-                              Xóa
-                            </Button>
-                          </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Create/Edit Assignment Dialog */}
-          <Dialog open={assignmentDialogOpen} onOpenChange={setAssignmentDialogOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingAssignment ? 'Chỉnh sửa bài tập' : 'Tạo bài tập mới'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingAssignment 
-                    ? 'Cập nhật thông tin bài tập' 
-                    : 'Điền thông tin để tạo bài tập mới'}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Tiêu đề bài tập *</Label>
-                  <Input
-                    id="title"
-                    placeholder="Nhập tiêu đề bài tập"
-                    value={assignmentForm.title}
-                    onChange={(e) => setAssignmentForm({ ...assignmentForm, title: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Mô tả</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Nhập mô tả bài tập (không bắt buộc)"
-                    value={assignmentForm.description}
-                    onChange={(e) => setAssignmentForm({ ...assignmentForm, description: e.target.value })}
-                    rows={4}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="dueDate">Hạn nộp</Label>
-                    <Input
-                      id="dueDate"
-                      type="datetime-local"
-                      value={assignmentForm.dueDate}
-                      onChange={(e) => setAssignmentForm({ ...assignmentForm, dueDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="maxScore">Điểm tối đa</Label>
-                    <Input
-                      id="maxScore"
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={assignmentForm.maxScore}
-                      onChange={(e) => setAssignmentForm({ ...assignmentForm, maxScore: Number(e.target.value) })}
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setAssignmentDialogOpen(false);
-                    resetAssignmentForm();
-                  }}
-                  disabled={createAssignmentMutation.isPending || updateAssignmentMutation.isPending}
-                >
-                  Hủy
-                </Button>
-                <Button 
-                  onClick={handleSaveAssignment}
-                  disabled={createAssignmentMutation.isPending || updateAssignmentMutation.isPending}
-                >
-                  {(createAssignmentMutation.isPending || updateAssignmentMutation.isPending) ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      Đang lưu...
-                    </>
-                  ) : (
-                    editingAssignment ? 'Cập nhật' : 'Tạo bài tập'
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Delete Assignment Dialog */}
-          <AlertDialog open={deleteAssignmentDialogOpen} onOpenChange={setDeleteAssignmentDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Xác nhận xóa bài tập</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Bạn có chắc chắn muốn xóa bài tập "{selectedAssignment?.title}"? 
-                  Hành động này sẽ xóa tất cả bài nộp liên quan và không thể hoàn tác.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Hủy</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleDeleteAssignment}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Xóa
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </TabsContent>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
 
         <TabsContent value="documents">
           <Card>

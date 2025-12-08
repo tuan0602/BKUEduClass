@@ -52,7 +52,6 @@ export function DashboardLayout({ user, children, onLogout }: DashboardLayoutPro
         { id: 'courses', label: 'Quản lý lớp học', icon: BookOpen, path: '/teacher/courses' },
         { id: 'assignments', label: 'Quản lý bài tập', icon: FileText, path: '/teacher/assignments' },
         { id: 'students', label: 'Quản lý sinh viên', icon: Users, path: '/teacher/students' },
-        { id: 'reports', label: 'Thống kê lớp học', icon: BarChart3, path: '/teacher/reports' },
         { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle, path: '/profile' }
       ];
     } else if (user.role === 'ADMIN') {
@@ -62,7 +61,6 @@ export function DashboardLayout({ user, children, onLogout }: DashboardLayoutPro
         { id: 'courses', label: 'Quản lý lớp học', icon: BookOpen, path: '/admin/courses' },
         { id: 'reports', label: 'Thống kê hệ thống', icon: BarChart3, path: '/admin/reports' },
         { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCircle, path: '/profile' },
-        { id: 'settings', label: 'Cài đặt', icon: Settings, path: '/admin/settings' }
       ];
     }
     return [];

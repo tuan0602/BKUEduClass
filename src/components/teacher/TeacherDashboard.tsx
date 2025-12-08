@@ -1,9 +1,14 @@
+// src/components/teacher/TeacherDashboard.tsx
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { BookOpen, FileText, Users, CheckCircle } from 'lucide-react';
+import { BookOpen, FileText, Users, CheckCircle, Loader2, TrendingUp, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '../../context/AuthContext';
-import { DEMO_COURSES, DEMO_ASSIGNMENTS, DEMO_SUBMISSIONS } from '../../lib/mockData';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useCourses } from '../../hooks/useCourse';
+import { useQueries } from '@tanstack/react-query';
+import { assignmentKeys, fetchAssignmentsByCourse } from '../../hooks/useAssignment';
+import { Badge } from '../ui/badge';
+import { Progress } from '../ui/progress';
 
 interface TeacherDashboardProps {
   user: User;
@@ -11,156 +16,201 @@ interface TeacherDashboardProps {
 
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
   const navigate = useNavigate();
-  const myCourses = DEMO_COURSES.filter(course => course.teacherId === user.userId);
-  const myAssignments = DEMO_ASSIGNMENTS.filter(assignment =>
-    myCourses.some(course => course.id === assignment.courseId)
-  );
-  const totalStudents = myCourses.reduce((sum, course) => sum + course.studentCount, 0);
-  const pendingGrading = DEMO_SUBMISSIONS.filter(s => s.status === 'submitted').length;
+  const [totalAssignments, setTotalAssignments] = useState(0);
 
-  const submissionData = myCourses.map(course => ({
-    name: course.code,
-    'Đã nộp': Math.floor(Math.random() * course.studentCount),
-    'Chưa nộp': Math.floor(Math.random() * (course.studentCount / 2))
+  // Fetch courses
+  const { data: coursesData, isLoading: isLoadingCourses } = useCourses({ size: 100 });
+
+  // Filter courses by teacher
+  const myCourses = coursesData?.result.filter(
+    course => course.teacher?.userId === user.userId
+  ) || [];
+
+  // Fetch assignments for each course
+  const assignmentQueries = useQueries({
+    queries: myCourses.map(course => ({
+      queryKey: assignmentKeys.list(course.id, { size: 100 }),
+      queryFn: () => fetchAssignmentsByCourse(course.id, { size: 100 }),
+      enabled: course.id > 0,
+      staleTime: 1000 * 60 * 3
+    }))
+  });
+
+  const isLoadingAssignments = assignmentQueries.some(q => q.isLoading);
+  const isLoading = isLoadingCourses || isLoadingAssignments;
+
+  // Calculate total assignments
+  useEffect(() => {
+    const total = assignmentQueries
+      .filter(q => q.data?.result)
+      .reduce((sum, q) => sum + (q.data?.result.length || 0), 0);
+    setTotalAssignments(total);
+  }, [assignmentQueries]);
+
+  // Calculate total students from courses
+  const totalStudents = myCourses.reduce((sum, course) => sum + (course.studentCount || 0), 0);
+
+  // Calculate course statistics
+  const courseDetailData = myCourses.map(course => ({
+    code: course.code,
+    name: course.name,
+    studentCount: course.studentCount || 0,
+    assignmentCount: course.assignmentCount || 0,
   }));
 
-  const gradeData = [
-    { name: 'A (85-100)', value: 25, color: '#10b981' },
-    { name: 'B (70-84)', value: 35, color: '#3b82f6' },
-    { name: 'C (55-69)', value: 30, color: '#f59e0b' },
-    { name: 'D (40-54)', value: 10, color: '#ef4444' }
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1>Tổng quan giảng dạy</h1>
+        <h1 className="text-3xl font-bold">Tổng quan giảng dạy</h1>
         <p className="text-muted-foreground mt-1">Xin chào, {user.name}</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Card 1: Lớp học */}
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Lớp học</CardTitle>
+            <CardTitle className="text-sm font-medium">Lớp học</CardTitle>
             <BookOpen className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{myCourses.length}</div>
+            <div className="text-2xl font-bold text-primary">{myCourses.length}</div>
             <p className="text-xs text-muted-foreground mt-1">Đang giảng dạy</p>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Card 2: Sinh viên */}
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Sinh viên</CardTitle>
+            <CardTitle className="text-sm font-medium">Sinh viên</CardTitle>
             <Users className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{totalStudents}</div>
+            <div className="text-2xl font-bold text-primary">{totalStudents}</div>
             <p className="text-xs text-muted-foreground mt-1">Tổng số sinh viên</p>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Card 3: Bài tập */}
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Bài tập</CardTitle>
+            <CardTitle className="text-sm font-medium">Bài tập</CardTitle>
             <FileText className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-primary">{myAssignments.length}</div>
+            <div className="text-2xl font-bold text-primary">
+              {isLoadingAssignments ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                totalAssignments
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">Đã tạo</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Chờ chấm</CardTitle>
-            <CheckCircle className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-primary">{pendingGrading}</div>
-            <p className="text-xs text-muted-foreground mt-1">Bài nộp</p>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Charts */}
+      {/* Overview Stats */}
       <div className="grid md:grid-cols-2 gap-6">
+        {/* Teaching Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Tình trạng nộp bài</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Tổng quan giảng dạy
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={submissionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="Đã nộp" fill="#2F80ED" />
-                <Bar dataKey="Chưa nộp" fill="#E0E0E0" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium">Lớp học đang dạy</span>
+                </div>
+                <span className="text-lg font-bold text-blue-600">{myCourses.length}</span>
+              </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Phân bố điểm</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={gradeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.value}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {gradeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium">Tổng sinh viên</span>
+                </div>
+                <span className="text-lg font-bold text-green-600">{totalStudents}</span>
+              </div>
 
-      {/* Recent Courses */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lớp học của tôi</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {myCourses.map(course => (
-              <div
-                key={course.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                onClick={() => navigate(`/teacher/courses/${course.id}`)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div>{course.name}</div>
-                    <div className="text-sm text-muted-foreground">{course.code} • {course.studentCount} sinh viên</div>
+              <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-medium">Bài tập đã tạo</span>
+                </div>
+                <span className="text-lg font-bold text-purple-600">
+                  {isLoadingAssignments ? '...' : totalAssignments}
+                </span>
+              </div>
+
+              {myCourses.length > 0 && totalStudents > 0 && (
+                <div className="pt-3 border-t">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Trung bình sinh viên/lớp</span>
+                    <span className="font-semibold">
+                      {Math.round(totalStudents / myCourses.length)} sinh viên
+                    </span>
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">{course.semester}</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Course Statistics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary" />
+              Thống kê lớp học
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {courseDetailData.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Chưa có dữ liệu lớp học
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            ) : (
+              <div className="space-y-3">
+                {courseDetailData.slice(0, 5).map((course, index) => (
+                  <div key={index} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">{course.code}</span>
+                      <span className="text-muted-foreground">
+                        {course.studentCount} sinh viên • {course.assignmentCount} bài tập
+                      </span>
+                    </div>
+                    <Progress 
+                      value={course.studentCount > 0 ? Math.min((course.studentCount / 50) * 100, 100) : 0} 
+                      className="h-2"
+                    />
+                  </div>
+                ))}
+                {courseDetailData.length > 5 && (
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                    và {courseDetailData.length - 5} lớp học khác...
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
     </div>
   );
 }
