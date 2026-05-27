@@ -1,14 +1,8 @@
-# dependencies
+# node_modules
+**/node_modules/
 node_modules/
 
-# build outputs
-dist/
-build/
-
-# env files
+# các file môi trường
 .env
-.env.local
-
-# editor / system files
-.vscode/
-.DS_Store
+**/dist/
+**/build/
