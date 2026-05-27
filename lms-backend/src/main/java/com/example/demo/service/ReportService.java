@@ -3,7 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.*;
 import com.example.demo.domain.enumeration.EnrollmentStatus;
 import com.example.demo.domain.enumeration.Role;
-import com.example.demo.dto.response.courseDTO.ReponseCourseDTO;
+import com.example.demo.dto.response.courseDTO.ResponseCourseDTO;
 import com.example.demo.dto.response.report.ProgressLearning;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.SubmissionRepository;

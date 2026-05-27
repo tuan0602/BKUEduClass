@@ -3,7 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.*;
 import com.example.demo.domain.enumeration.StatusAssignment;
 import com.example.demo.dto.request.submission.SubmitSubmissionDTO;
-import com.example.demo.dto.response.submissionDTO.ReponseDetailSubmissionDTO;
+import com.example.demo.dto.response.submissionDTO.ResponseDetailSubmissionDTO;
 import com.example.demo.dto.response.submissionDTO.SubmissionListItemDTO;
 import com.example.demo.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -78,7 +78,7 @@ public class SubmissionService {
         answerOfSubmissionRepository.saveAll(submission.getAnswerOfSubmissions());
 
     }
-    public ReponseDetailSubmissionDTO getSubmissionsBySubmissionId(Long SubmissionId,String userEmail) {
+    public ResponseDetailSubmissionDTO getSubmissionsBySubmissionId(Long SubmissionId,String userEmail) {
         Submission submission=submissionRepository.findById(SubmissionId).orElse(null);
         if (submission==null){
             throw new RuntimeException("Submission not found");
@@ -101,9 +101,9 @@ public class SubmissionService {
             default:
                 break;
         }
-        return ReponseDetailSubmissionDTO.fromSubmission(submission);
+        return ResponseDetailSubmissionDTO.fromSubmission(submission);
     }
-    public ReponseDetailSubmissionDTO getSubmissionsByAssigmentId(Long assignmentId,String userEmail) {
+    public ResponseDetailSubmissionDTO getSubmissionsByAssigmentId(Long assignmentId,String userEmail) {
         Assignment assignment=assignmentRepository.findById(assignmentId).orElse(null);
         if (assignment==null){
             throw new RuntimeException("Assignment not found");
@@ -115,7 +115,7 @@ public class SubmissionService {
         Submission submission=submissionRepository.findByAssignmentAndStudent(assignment,user).orElse(null);
         if (submission == null) {
         // Trả về DTO rỗng báo rằng user chưa nộp bài
-        return ReponseDetailSubmissionDTO.empty();
+        return ResponseDetailSubmissionDTO.empty();
     }
 
         switch (user.getRole()){
@@ -132,7 +132,7 @@ public class SubmissionService {
             default:
                 break;
         }
-        return ReponseDetailSubmissionDTO.fromSubmission(submission);
+        return ResponseDetailSubmissionDTO.fromSubmission(submission);
     }
     public List<SubmissionListItemDTO> getSubmissionsByAssignment(Long assignmentId) {
     List<Submission> submissions = submissionRepository.findByAssignmentId(assignmentId);

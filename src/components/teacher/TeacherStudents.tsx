@@ -199,7 +199,6 @@ export function TeacherStudents({ user }: TeacherStudentsProps) {
                 <TableRow>
                   <TableHead>Họ và tên</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Chuyên ngành</TableHead>
                   <TableHead>Số lớp học</TableHead>
                   <TableHead>Điểm TB</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
@@ -210,13 +209,6 @@ export function TeacherStudents({ user }: TeacherStudentsProps) {
                   <TableRow key={student.userId}>
                     <TableCell className="font-medium">{student.name}</TableCell>
                     <TableCell>{student.email}</TableCell>
-                    <TableCell>
-                      {student.major ? (
-                        <Badge variant="outline">{student.major}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">N/A</span>
-                      )}
-                    </TableCell>
                     <TableCell>
                       {selectedCourse === 'all' ? (
                         <span className="text-sm">{student.courses.length} lớp</span>
@@ -269,14 +261,6 @@ export function TeacherStudents({ user }: TeacherStudentsProps) {
                 <div>
                   <label className="text-sm text-muted-foreground">Email</label>
                   <p className="font-medium">{selectedStudent.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">Chuyên ngành</label>
-                  <p className="font-medium">{selectedStudent.major || 'Chưa cập nhật'}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">Năm học</label>
-                  <p className="font-medium">{selectedStudent.year || 'N/A'}</p>
                 </div>
                 {selectedStudent.className && (
                   <div>

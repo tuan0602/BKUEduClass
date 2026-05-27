@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.domain.Course;
 import com.example.demo.dto.request.course.CourseDTO;
 import com.example.demo.dto.response.ApiResponse;
-import com.example.demo.dto.response.courseDTO.ReponseDetailCourseDTO;
+import com.example.demo.dto.response.courseDTO.ResponseDetailCourseDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.service.CourseService;
 import com.example.demo.util.SecurityUtil;
@@ -51,11 +51,11 @@ public class CourseController {
     @GetMapping("/courses/{courseId}")
     @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "Get detail course cho cả teacher, student, admin luôn", description = "create a new user with the provided information")
-    public ResponseEntity<ApiResponse<ReponseDetailCourseDTO>> getCoursesDetail(@PathVariable Long courseId){
+    public ResponseEntity<ApiResponse<ResponseDetailCourseDTO>> getCoursesDetail(@PathVariable Long courseId){
         String user = securityUtil.getCurrentUserLogin()
                 .orElseThrow(()-> new RuntimeException("User not found"));
-        ReponseDetailCourseDTO result=courseService.getCoursesDetail(courseId,user);
-        ApiResponse<ReponseDetailCourseDTO> response=new ApiResponse<>(HttpStatus.OK,"get successful",result,null);
+        ResponseDetailCourseDTO result=courseService.getCoursesDetail(courseId,user);
+        ApiResponse<ResponseDetailCourseDTO> response=new ApiResponse<>(HttpStatus.OK,"get successful",result,null);
         return ResponseEntity.ok().body(response);
     }
     @DeleteMapping("/courses/{courseId}")

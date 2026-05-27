@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReponseAssignmentDTO {
+public class ResponseAssignmentDTO {
    private Long id;
    private String title;
    private String description;
@@ -21,8 +21,8 @@ public class ReponseAssignmentDTO {
    private LocalDateTime createdAt;
    private LocalDateTime updatedAt;
    private StatusAssignment status;
-   public static ReponseAssignmentDTO fromAssignment(Assignment assignment) {
-         ReponseAssignmentDTO dto = new ReponseAssignmentDTO();
+   public static ResponseAssignmentDTO fromAssignment(Assignment assignment) {
+         ResponseAssignmentDTO dto = new ResponseAssignmentDTO();
          dto.id = assignment.getId();
          dto.title = assignment.getTitle();
          dto.description = assignment.getDescription();

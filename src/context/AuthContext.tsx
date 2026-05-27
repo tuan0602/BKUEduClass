@@ -9,7 +9,7 @@ export interface User {
   role: "ADMIN" | "TEACHER" | "STUDENT"; 
   avatar?: string;
   phone?: string;
-  studentId?: string;   // ✅ THÊM
+  studentId?: string;
   teacherId?: string;
 }
 
@@ -40,19 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // ✅ Bỏ Authorization header vì interceptor đã tự động thêm
     api
       .get("/auth/me")
       .then((res) => {
-        // Backend wraps payload in an ApiResponse: { statusCode, message, data, ... }
-        // Normalise to our `User` shape.
         const payload = res?.data?.data || res?.data;
-        // Some responses nest the user under `user` (login), others return flat user DTO.
         const u = payload?.user || payload;
         if (u) {
-          // Map fields to our User interface if needed
           const mapped = {
-            userId: u.userId || u.id || u.userId || '',
+            userId: u.userId || u.id || '',
             name: u.name || u.fullName || '',
             email: u.email || '',
             role: u.role || 'STUDENT',
@@ -73,25 +68,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-const login = async (email: string, password: string) => {
-  try {
-    console.log("🔵 Login called:", email); // ✅ DEBUG
-    
-    const res = await api.post("/auth/login", { email, password });
-    console.log("🟢 Login response:", res.data); // ✅ DEBUG
-    
-    const { token, userId, name, email: userEmail, role } = res.data.data;
-    
-    localStorage.setItem("token", token);
-    setUser({ userId, name, email: userEmail, role });
-    
-    console.log("🟢 Login successful!"); // ✅ DEBUG
-    return true;
-  } catch (error) {
-    console.error("🔴 Login failed:", error);
-    return false;
-  }
-};
+  const login = async (email: string, password: string) => {
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      const { token, userId, name, email: userEmail, role } = res.data.data;
+      localStorage.setItem("token", token);
+      setUser({ userId, name, email: userEmail, role });
+      return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return false;
+    }
+  };
 
   const register = async (
     name: string,
@@ -100,15 +88,12 @@ const login = async (email: string, password: string) => {
     role: "STUDENT" | "TEACHER"
   ) => {
     try {
-      const res = await api.post("/auth/register", { name, email, password, role });
-      
-      // ✅ SỬA: Backend trả về flat object
-      const { token, userId, name: userName, email: userEmail, role: userRole } = res.data.data;
-      
-      localStorage.setItem("token", token);
-      setUser({ userId, name: userName, email: userEmail, role: userRole });
-      
-      return true;
+      // Bước 1: Đăng ký tài khoản
+      await api.post("/auth/register", { name, email, password, role });
+
+      // Bước 2: Tự động login sau khi đăng ký thành công
+      const success = await login(email, password);
+      return success;
     } catch (error) {
       console.error("Register failed:", error);
       return false;
@@ -118,8 +103,8 @@ const login = async (email: string, password: string) => {
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    // ✅ Clear toàn bộ React Query cache khi logout
-    // Điều này đảm bảo data của user cũ không còn trong cache khi login user mới
+    // Clear toàn bộ React Query cache khi logout
+    // Đảm bảo data của user cũ không còn trong cache khi login user mới
     queryClient.clear();
   };
 

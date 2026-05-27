@@ -34,11 +34,14 @@ public class FileController {
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "Upload file lên S3")
     public String uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("folder") String folder // tên thư mục trong bucket
+            @RequestParam("folder") String folder
     ) throws IOException {
-        String key = folder + "/" + file.getOriginalFilename(); // key = "folder/filename"
+        String key = folder + "/" + file.getOriginalFilename();
         s3Client.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucketName)
@@ -48,7 +51,11 @@ public class FileController {
         );
         return "Uploaded: " + key;
     }
+
     @GetMapping("/download/{folder}/{filename}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN', 'STUDENT')")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "Download file từ S3")
     public ResponseEntity<byte[]> downloadFile(
             @PathVariable String folder,
             @PathVariable String filename
@@ -61,27 +68,26 @@ public class FileController {
                             .key(key)
                             .build()
             );
-
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                     .body(objectBytes.asByteArray());
-
         } catch (Exception e) {
             return ResponseEntity.status(404).body(null);
         }
     }
+
     @DeleteMapping("/delete/{folder}/{filename}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "Xóa file trên S3")
     public ResponseEntity<String> deleteFile(
             @PathVariable String folder,
             @PathVariable String filename
     ) {
         String key = folder + "/" + filename;
         try {
-            // Kiểm tra file tồn tại trước (tùy chọn)
             s3Client.headObject(builder -> builder.bucket(bucketName).key(key));
-
-            // Xóa file
             s3Client.deleteObject(
                     DeleteObjectRequest.builder()
                             .bucket(bucketName)
@@ -95,5 +101,4 @@ public class FileController {
             return ResponseEntity.status(500).body("Error deleting file: " + e.getMessage());
         }
     }
-
 }

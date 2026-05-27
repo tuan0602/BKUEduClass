@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReponseDetailCourseDTO {
+public class ResponseDetailCourseDTO {
     private Course course;
     private User teacher;
     private List<User> students;
@@ -28,7 +28,7 @@ public class ReponseDetailCourseDTO {
         int discussionsCount;
         double submissionRate;
     }
-    public ReponseDetailCourseDTO(Course course,int totalAssignments,int submittedAssignments,int documentsCount,int studentsCount,double averageGrade, int discussionsCount,double submissionRate) {
+    public ResponseDetailCourseDTO(Course course,int totalAssignments,int submittedAssignments,int documentsCount,int studentsCount,double averageGrade, int discussionsCount,double submissionRate) {
         this.course=course;
         this.teacher = course.getTeacher() != null ? course.getTeacher() : null;
         this.students=course.getEnrollments().stream()
@@ -45,5 +45,5 @@ public class ReponseDetailCourseDTO {
         this.data.submissionRate= submissionRate;
 
     }
-    public static ReponseDetailCourseDTO fromCourse(Course course,int totalAssignments,int submittedAssignments,int documentsCount,int studentsCount,double averageGrade,int discussionsCount,double submissionRate){return  new ReponseDetailCourseDTO(course, totalAssignments,submittedAssignments,documentsCount,studentsCount,averageGrade,discussionsCount, submissionRate);}
+    public static ResponseDetailCourseDTO fromCourse(Course course,int totalAssignments,int submittedAssignments,int documentsCount,int studentsCount,double averageGrade,int discussionsCount,double submissionRate){return  new ResponseDetailCourseDTO(course, totalAssignments,submittedAssignments,documentsCount,studentsCount,averageGrade,discussionsCount, submissionRate);}
 }

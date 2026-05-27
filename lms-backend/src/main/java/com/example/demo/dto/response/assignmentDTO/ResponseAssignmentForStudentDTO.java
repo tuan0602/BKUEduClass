@@ -14,7 +14,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReponseAssignmentForStudentDTO {
+public class ResponseAssignmentForStudentDTO {
     private Long id;
     private String title;
     private String description;
@@ -34,7 +34,7 @@ public class ReponseAssignmentForStudentDTO {
         private String answerC;
         private String answerD;
     }
-    public ReponseAssignmentForStudentDTO(Assignment assignment) {
+    public ResponseAssignmentForStudentDTO(Assignment assignment) {
         this.id=assignment.getId();
         this.title=assignment.getTitle();
         this.description=assignment.getDescription();
@@ -53,5 +53,5 @@ public class ReponseAssignmentForStudentDTO {
             this.question.add(questionForStudentDTO);
         });
     }
-    public static ReponseAssignmentForStudentDTO fromAssignment(Assignment assignment) {return new ReponseAssignmentForStudentDTO(assignment);}
+    public static ResponseAssignmentForStudentDTO fromAssignment(Assignment assignment) {return new ResponseAssignmentForStudentDTO(assignment);}
 }

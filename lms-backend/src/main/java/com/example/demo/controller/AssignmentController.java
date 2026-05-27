@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.domain.Assignment;
 import com.example.demo.dto.request.assignment.CreateAssignmentDTO;
 import com.example.demo.dto.response.ApiResponse;
-import com.example.demo.dto.response.assignmentDTO.ReponseAssignmentForStudentDTO;
+import com.example.demo.dto.response.assignmentDTO.ResponseAssignmentForStudentDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.service.AssignmentService;
 import com.example.demo.util.SecurityUtil;
@@ -90,11 +90,11 @@ public class AssignmentController {
      @PreAuthorize("hasRole('STUDENT')")
      @SecurityRequirement(name="BearerAuth")
      @Operation(summary = "Get Detail of Assignment of Course for STUDENT", description = "")
-     public ResponseEntity<ApiResponse<ReponseAssignmentForStudentDTO>> getAssignmentDetailforStudent(@PathVariable Long assignmentId) {
+     public ResponseEntity<ApiResponse<ResponseAssignmentForStudentDTO>> getAssignmentDetailforStudent(@PathVariable Long assignmentId) {
           String user = securityUtil.getCurrentUserLogin()
                   .orElseThrow(()-> new RuntimeException("User not found"));
-          ReponseAssignmentForStudentDTO reponseAssignmentDTO = assignmentService.getAssignmentDetailForStudent(assignmentId, user);
-          ApiResponse<ReponseAssignmentForStudentDTO> response=new ApiResponse<>(HttpStatus.OK,"get assignment detail successful ",reponseAssignmentDTO,null);
+          ResponseAssignmentForStudentDTO reponseAssignmentDTO = assignmentService.getAssignmentDetailForStudent(assignmentId, user);
+          ApiResponse<ResponseAssignmentForStudentDTO> response=new ApiResponse<>(HttpStatus.OK,"get assignment detail successful ",reponseAssignmentDTO,null);
           return ResponseEntity.ok().body(response);
      }
 

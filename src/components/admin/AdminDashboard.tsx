@@ -190,7 +190,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-1 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Phân bố người dùng theo vai trò</CardTitle>
@@ -204,38 +204,6 @@ export function AdminDashboard() {
                 <Tooltip />
                 <Bar dataKey="value" fill="#2F80ED" radius={[8, 8, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Hoạt động theo tháng</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={activityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="users" 
-                  stroke="#2F80ED" 
-                  name="Người dùng"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="courses" 
-                  stroke="#27AE60" 
-                  name="Lớp học"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

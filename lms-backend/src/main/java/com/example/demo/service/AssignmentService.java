@@ -3,9 +3,9 @@ package com.example.demo.service;
 import com.example.demo.domain.*;
 import com.example.demo.domain.enumeration.StatusAssignment;
 import com.example.demo.dto.request.assignment.CreateAssignmentDTO;
-import com.example.demo.dto.response.assignmentDTO.ReponseAssignmentForStudentDTO;
+import com.example.demo.dto.response.assignmentDTO.ResponseAssignmentForStudentDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
-import com.example.demo.dto.response.assignmentDTO.ReponseAssignmentDTO;
+import com.example.demo.dto.response.assignmentDTO.ResponseAssignmentDTO;
 import com.example.demo.repository.*;
 import com.example.demo.util.errors.ResourceNotFoundException;
 import jakarta.persistence.criteria.Predicate;
@@ -121,7 +121,7 @@ public class AssignmentService {
         };
 
         Page<Assignment> page= assignmentRepository.findAll(spec, pageable);
-        List<ReponseAssignmentDTO> result=page.getContent().stream().map(ReponseAssignmentDTO::fromAssignment).collect(Collectors.toList());
+        List<ResponseAssignmentDTO> result=page.getContent().stream().map(ResponseAssignmentDTO::fromAssignment).collect(Collectors.toList());
 
         ResultPaginationDTO resultPaginationDTO=new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt=new ResultPaginationDTO.Meta();
@@ -202,13 +202,13 @@ public class AssignmentService {
     
     return assignmentRepository.save(assignment);
 }   
-    public ReponseAssignmentForStudentDTO getAssignmentDetailForStudent(Long assignmentId, String currentUserEmail) {
+    public ResponseAssignmentForStudentDTO getAssignmentDetailForStudent(Long assignmentId, String currentUserEmail) {
         Assignment assignment = assignmentRepository.findById(assignmentId).orElse(null);
         if (assignment == null) {
             throw new ResourceNotFoundException("Assignment not found");
         }
         //Validate student is enrolled in the course
-        return ReponseAssignmentForStudentDTO.fromAssignment(assignment);
+        return ResponseAssignmentForStudentDTO.fromAssignment(assignment);
     }
 
 }

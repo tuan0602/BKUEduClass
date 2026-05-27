@@ -2,7 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.request.submission.SubmitSubmissionDTO;
 import com.example.demo.dto.response.ApiResponse;
-import com.example.demo.dto.response.submissionDTO.ReponseDetailSubmissionDTO;
+import com.example.demo.dto.response.submissionDTO.ResponseDetailSubmissionDTO;
 import com.example.demo.dto.response.submissionDTO.SubmissionListItemDTO;
 import com.example.demo.service.AssignmentService;
 import com.example.demo.service.SubmissionService;
@@ -63,17 +63,17 @@ public class SubmissionController {
             summary = "Get submission result by submission ID",
             description = "Return detailed submission result"
     )
-    public ResponseEntity<ApiResponse<ReponseDetailSubmissionDTO>> getSubmissionResult(
+    public ResponseEntity<ApiResponse<ResponseDetailSubmissionDTO>> getSubmissionResult(
             @PathVariable Long submissionId
     ) {
 
         String user = securityUtil.getCurrentUserLogin()
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        ReponseDetailSubmissionDTO result =
+        ResponseDetailSubmissionDTO result =
                 submissionService.getSubmissionsBySubmissionId(submissionId, user);
 
-        ApiResponse<ReponseDetailSubmissionDTO> response = new ApiResponse<>(
+        ApiResponse<ResponseDetailSubmissionDTO> response = new ApiResponse<>(
                 HttpStatus.OK,
                 "Get submission result successfully",
                 result,
@@ -92,17 +92,17 @@ public class SubmissionController {
             summary = "Get submission result by assignment ID",
             description = "Return student submission result for a specific assignment"
     )
-    public ResponseEntity<ApiResponse<ReponseDetailSubmissionDTO>> getSubmissionResultByAssignmentId(
+    public ResponseEntity<ApiResponse<ResponseDetailSubmissionDTO>> getSubmissionResultByAssignmentId(
             @PathVariable Long assignmentId
     ) {
 
         String user = securityUtil.getCurrentUserLogin()
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        ReponseDetailSubmissionDTO result =
+        ResponseDetailSubmissionDTO result =
                 submissionService.getSubmissionsByAssigmentId(assignmentId, user);
 
-        ApiResponse<ReponseDetailSubmissionDTO> response = new ApiResponse<>(
+        ApiResponse<ResponseDetailSubmissionDTO> response = new ApiResponse<>(
                 HttpStatus.OK,
                 "Get submission result successfully",
                 result,

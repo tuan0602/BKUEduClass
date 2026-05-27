@@ -88,9 +88,6 @@ const handleJoinCourse = () => {
                   value={enrollmentCode}
                   onChange={(e) => setEnrollmentCode(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Mã demo: WEB2024, DB2024, AI2024
-                </p>
               </div>
             </div>
             <DialogFooter>

@@ -175,29 +175,6 @@ export function TeacherCourses({ user }: TeacherCoursesProps) {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditDialog(course);
-                    }}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="text-destructive hover:text-destructive/90"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDeleteDialog(course);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>

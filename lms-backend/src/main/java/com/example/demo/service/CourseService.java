@@ -4,8 +4,8 @@ import com.example.demo.domain.*;
 import com.example.demo.domain.enumeration.EnrollmentStatus;
 import com.example.demo.domain.enumeration.Role;
 import com.example.demo.dto.request.course.CourseDTO;
-import com.example.demo.dto.response.courseDTO.ReponseCourseDTO;
-import com.example.demo.dto.response.courseDTO.ReponseDetailCourseDTO;
+import com.example.demo.dto.response.courseDTO.ResponseCourseDTO;
+import com.example.demo.dto.response.courseDTO.ResponseDetailCourseDTO;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.repository.CourseEnrollmentRepository;
 import com.example.demo.repository.CourseRepository;
@@ -81,7 +81,7 @@ public class CourseService {
         };
 
         Page<Course> page= courseRepository.findAll(spec, pageable);
-        List<ReponseCourseDTO> result=page.getContent().stream().map(ReponseCourseDTO::fromCourse).collect(Collectors.toList());
+        List<ResponseCourseDTO> result=page.getContent().stream().map(ResponseCourseDTO::fromCourse).collect(Collectors.toList());
 
         ResultPaginationDTO resultPaginationDTO=new ResultPaginationDTO();
         ResultPaginationDTO.Meta mt=new ResultPaginationDTO.Meta();
@@ -95,7 +95,7 @@ public class CourseService {
         resultPaginationDTO.setResult(result);
         return resultPaginationDTO;
     }
-    public ReponseDetailCourseDTO getCoursesDetail(Long courseId, String userMail) {
+    public ResponseDetailCourseDTO getCoursesDetail(Long courseId, String userMail) {
         User user=userRepository.findByEmail(userMail).orElse(null);
         Course course=courseRepository.findById(courseId).orElse(null);
         if (course == null) {
@@ -172,7 +172,7 @@ public class CourseService {
             discussionsCount=course.getDiscussions() != null ? course.getDiscussions().size() : 0;
         }
 
-        return ReponseDetailCourseDTO.fromCourse(course, totalAssignments,submittedAssignments,documentsCount,studentsCount,averageGrade,discussionsCount, submissionRate);
+        return ResponseDetailCourseDTO.fromCourse(course, totalAssignments,submittedAssignments,documentsCount,studentsCount,averageGrade,discussionsCount, submissionRate);
     }
     public void deleteCourse(Long courseId) {
         Course course = courseRepository.findById(courseId).orElse(null);

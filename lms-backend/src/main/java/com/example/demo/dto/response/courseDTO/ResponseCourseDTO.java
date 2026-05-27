@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReponseCourseDTO {
+public class ResponseCourseDTO {
     private Long id;
     private String name;
     private String description;
@@ -22,7 +22,7 @@ public class ReponseCourseDTO {
     private String status;
     private int studentCount;
     private int assignmentCount;
-    public ReponseCourseDTO(Course course){
+    public ResponseCourseDTO(Course course){
         this.id=course.getId();
         this.name=course.getName();
         this.description=course.getDescription();
@@ -34,5 +34,5 @@ public class ReponseCourseDTO {
         this.studentCount = course.getEnrollments() != null ? course.getEnrollments().stream().filter(o-> o.getStatus()== EnrollmentStatus.ACCEPTED).toList().size() : 0;
         this.assignmentCount = course.getAssignments() != null ? course.getAssignments().size() : 0;
     }
-    public static ReponseCourseDTO fromCourse(Course course){return  new ReponseCourseDTO(course);}
+    public static ResponseCourseDTO fromCourse(Course course){return  new ResponseCourseDTO(course);}
 }

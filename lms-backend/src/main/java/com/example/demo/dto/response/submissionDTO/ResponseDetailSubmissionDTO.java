@@ -15,12 +15,12 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReponseDetailSubmissionDTO {
+public class ResponseDetailSubmissionDTO {
     private Long submissionId;
     private LocalDateTime submittedAt;
     private Double grade;
     private List<ResultAnswer> answers;
-    private Boolean submitted;  // 👉 Thêm flag để FE biết đã nộp hay chưa
+    private Boolean submitted;  // Thêm flag để FE biết đã nộp hay chưa
 
     @Getter
     @Setter
@@ -37,7 +37,7 @@ public class ReponseDetailSubmissionDTO {
     }
 
     // Constructor khi có submission
-    public ReponseDetailSubmissionDTO(Submission submission) {
+    public ResponseDetailSubmissionDTO(Submission submission) {
         this.submissionId = submission.getId();
         this.submittedAt = submission.getSubmittedAt();
         this.grade = submission.getGrade();
@@ -57,13 +57,13 @@ public class ReponseDetailSubmissionDTO {
         });
     }
 
-    public static ReponseDetailSubmissionDTO fromSubmission(Submission submission) {
-        return new ReponseDetailSubmissionDTO(submission);
+    public static ResponseDetailSubmissionDTO fromSubmission(Submission submission) {
+        return new ResponseDetailSubmissionDTO(submission);
     }
 
     // 👉 Trả về kết quả trống khi chưa nộp bài
-    public static ReponseDetailSubmissionDTO empty() {
-        ReponseDetailSubmissionDTO dto = new ReponseDetailSubmissionDTO();
+    public static ResponseDetailSubmissionDTO empty() {
+        ResponseDetailSubmissionDTO dto = new ResponseDetailSubmissionDTO();
         dto.submissionId = null;
         dto.submittedAt = null;
         dto.grade = null;

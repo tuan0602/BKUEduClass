@@ -160,7 +160,7 @@ public class AuthController {
                 .path("/")
                 .maxAge(0)
                 .build();
-        ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"Login success",null,null);
+        ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"Logout success",null,null);
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,deleteCookie.toString()).body(response);
 
     }
@@ -178,12 +178,13 @@ public class AuthController {
     @PostMapping("/reset-password")
     @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "ResetPassword", description = "")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestParam String newPassword){
-        String email = securityUtil.getCurrentUserLogin()
-                .orElseThrow(()-> new RuntimeException("User not found"));
-        authService.resetPassword(email,newPassword);
-        ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"reset password successful",null,null);
-        return ResponseEntity.ok().body(response);
-
-    }
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+        @RequestParam String currentPassword,
+        @RequestParam String newPassword){
+    String email = securityUtil.getCurrentUserLogin()
+            .orElseThrow(()-> new RuntimeException("User not found"));
+    authService.resetPassword(email, currentPassword, newPassword);
+    ApiResponse<Void> response=new ApiResponse<>(HttpStatus.OK,"reset password successful",null,null);
+    return ResponseEntity.ok().body(response);
+}
 }
