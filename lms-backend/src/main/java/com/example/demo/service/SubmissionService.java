@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.*;
+import com.example.demo.domain.enumeration.EnrollmentStatus;
 import com.example.demo.domain.enumeration.StatusAssignment;
 import com.example.demo.dto.request.submission.SubmitSubmissionDTO;
 import com.example.demo.dto.response.submissionDTO.ResponseDetailSubmissionDTO;
@@ -20,112 +21,102 @@ public class SubmissionService {
     final private UserRepository userRepository;
     final private AnswerOfSubmissionRepository answerOfSubmissionRepository;
     final private QuestionRepository questionRepository;
-    public void submitSubmission(SubmitSubmissionDTO submitSubmissionDTO,String userEmail) {
-        // Implementation goes here
-        User user=userRepository.findByEmail(userEmail).orElse(null);
-        if (user==null){
-            throw new RuntimeException("User not found");
+    final private CourseEnrollmentRepository courseEnrollmentRepository;
+
+    public void submitSubmission(SubmitSubmissionDTO submitSubmissionDTO, String userEmail) {
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        if (user == null) {
+            throw new RuntimeException("người dùng không tồn tại");
         }
-        Assignment assignment=assignmentRepository.findById(submitSubmissionDTO.getAssignmentId()).orElse(null);
-        if (assignment==null){
+
+        Assignment assignment = assignmentRepository.findById(submitSubmissionDTO.getAssignmentId()).orElse(null);
+        if (assignment == null) {
             throw new RuntimeException("Bài tập không tồn tại");
         }
-        if (assignment.getDueDate().isBefore(java.time.LocalDateTime.now())){
+
+        if (assignment.getDueDate().isBefore(java.time.LocalDateTime.now())) {
             throw new RuntimeException("Đã quá hạn nộp bài");
         }
-        if (assignment.getStatus()!= StatusAssignment.PUBLISHED){
+
+        if (assignment.getStatus() != StatusAssignment.PUBLISHED) {
             throw new RuntimeException("Bài tập chưa được công bố");
         }
-        ///////Kiểm tra User thuộc class hay không
-        ///////////////////Tạm bỏ qua////////////////////////////
-        /// Kiểm tra đã nộp bài chưa
-        if (submissionRepository.existsByAssignmentAndStudent(assignment,user)){
+
+        // Kiểm tra student đã được accepted vào course chưa
+        Course course = assignment.getCourse();
+        boolean isEnrolled = courseEnrollmentRepository
+                .existsByStudentAndCourseAndStatus(user, course, EnrollmentStatus.ACCEPTED);
+        if (!isEnrolled) {
+            throw new RuntimeException("Bạn không thuộc khóa học này");
+        }
+
+        // Kiểm tra đã nộp bài chưa
+        if (submissionRepository.existsByAssignmentAndStudent(assignment, user)) {
             throw new RuntimeException("Bạn đã nộp bài tập này rồi");
         }
-        ///  Tạo bài nộp
-        Submission submission=new Submission();
+
+        // Tạo bài nộp
+        Submission submission = new Submission();
         submission.setAssignment(assignment);
         submission.setStudent(user);
         submission.setAnswerOfSubmissions(new ArrayList<AnswerOfSubmission>());
-        int numberOfCorrectAnswer=0;
-        int numberOfQuestion=assignment.getQuestions().size();
-        List<Question> questions=assignment.getQuestions();
-        for (SubmitSubmissionDTO.AnswerTheQuestion answerDTO:submitSubmissionDTO.getAnswers()){
-            Question question=questions.stream().filter(q->q.getId().equals(answerDTO.getQuestionId())).findFirst().orElse(null);
-            if (question==null){
+
+        int numberOfCorrectAnswer = 0;
+        int numberOfQuestion = assignment.getQuestions().size();
+
+        if (numberOfQuestion == 0) {
+            throw new RuntimeException("Bài tập không có câu hỏi");
+        }
+
+        List<Question> questions = assignment.getQuestions();
+        for (SubmitSubmissionDTO.AnswerTheQuestion answerDTO : submitSubmissionDTO.getAnswers()) {
+            Question question = questions.stream()
+                    .filter(q -> q.getId().equals(answerDTO.getQuestionId()))
+                    .findFirst()
+                    .orElse(null);
+            if (question == null) {
                 throw new RuntimeException("Câu hỏi không tồn tại trong bài tập");
             }
-            AnswerOfSubmission answerOfSubmission=new AnswerOfSubmission();
+
+            AnswerOfSubmission answerOfSubmission = new AnswerOfSubmission();
             answerOfSubmission.setQuestion(question);
             answerOfSubmission.setSubmission(submission);
             answerOfSubmission.setAnswer(answerDTO.getAnswer());
-            //Kiểm tra đáp án
-            if (question.getCorrectAnswer().equals(answerDTO.getAnswer())){
+
+            if (question.getCorrectAnswer().equals(answerDTO.getAnswer())) {
                 answerOfSubmission.setCorrect(true);
                 numberOfCorrectAnswer++;
-            }
-            else {
+            } else {
                 answerOfSubmission.setCorrect(false);
             }
             submission.getAnswerOfSubmissions().add(answerOfSubmission);
         }
-        if (numberOfQuestion==0){
-            throw new RuntimeException("Bài tập không có câu hỏi");
-        }
-        Double score=((double)numberOfCorrectAnswer/(double)numberOfQuestion)*10;
+
+        Double score = ((double) numberOfCorrectAnswer / (double) numberOfQuestion) * 10;
         submission.setGrade(score);
         submissionRepository.save(submission);
         answerOfSubmissionRepository.saveAll(submission.getAnswerOfSubmissions());
+    }
 
-    }
-    public ResponseDetailSubmissionDTO getSubmissionsBySubmissionId(Long SubmissionId,String userEmail) {
-        Submission submission=submissionRepository.findById(SubmissionId).orElse(null);
-        if (submission==null){
-            throw new RuntimeException("Submission not found");
-        }
-        User user=userRepository.findByEmail(userEmail).orElse(null);
-        if (user==null){
-            throw new RuntimeException("User not found");
-        }
-        switch (user.getRole()){
-            case STUDENT:
-                if (!submission.getStudent().getUserId().equals(user.getUserId())){
-                    throw new RuntimeException("Bạn không có quyền xem bài nộp này");
-                }
-                break;
-            case TEACHER:
-                if (!submission.getAssignment().getCourse().getTeacher().equals(user.getUserId())){
-                    throw new RuntimeException("Bạn không có quyền xem bài nộp này");
-                }
-                break;
-            default:
-                break;
-        }
-        return ResponseDetailSubmissionDTO.fromSubmission(submission);
-    }
-    public ResponseDetailSubmissionDTO getSubmissionsByAssigmentId(Long assignmentId,String userEmail) {
-        Assignment assignment=assignmentRepository.findById(assignmentId).orElse(null);
-        if (assignment==null){
-            throw new RuntimeException("Assignment not found");
-        }
-        User user=userRepository.findByEmail(userEmail).orElse(null);
-        if (user==null){
-            throw new RuntimeException("User not found");
-        }
-        Submission submission=submissionRepository.findByAssignmentAndStudent(assignment,user).orElse(null);
+    public ResponseDetailSubmissionDTO getSubmissionsBySubmissionId(Long SubmissionId, String userEmail) {
+        Submission submission = submissionRepository.findById(SubmissionId).orElse(null);
         if (submission == null) {
-        // Trả về DTO rỗng báo rằng user chưa nộp bài
-        return ResponseDetailSubmissionDTO.empty();
-    }
+            throw new RuntimeException("bài nộp không tồn tại");
+        }
 
-        switch (user.getRole()){
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        if (user == null) {
+            throw new RuntimeException("người dùng không tồn tại");
+        }
+
+        switch (user.getRole()) {
             case STUDENT:
-                if (!submission.getStudent().getUserId().equals(user.getUserId())){
+                if (!submission.getStudent().getUserId().equals(user.getUserId())) {
                     throw new RuntimeException("Bạn không có quyền xem bài nộp này");
                 }
                 break;
             case TEACHER:
-                if (!submission.getAssignment().getCourse().getTeacher().equals(user.getUserId())){
+                if (!submission.getAssignment().getCourse().getTeacher().equals(user.getUserId())) {
                     throw new RuntimeException("Bạn không có quyền xem bài nộp này");
                 }
                 break;
@@ -134,32 +125,64 @@ public class SubmissionService {
         }
         return ResponseDetailSubmissionDTO.fromSubmission(submission);
     }
-    public List<SubmissionListItemDTO> getSubmissionsByAssignment(Long assignmentId) {
-    List<Submission> submissions = submissionRepository.findByAssignmentId(assignmentId);
 
-    List<SubmissionListItemDTO> result = new ArrayList<>();
+    public ResponseDetailSubmissionDTO getSubmissionsByAssigmentId(Long assignmentId, String userEmail) {
+        Assignment assignment = assignmentRepository.findById(assignmentId).orElse(null);
+        if (assignment == null) {
+            throw new RuntimeException("Bài tập không tồn tại");
+        }
 
-    for (Submission submission : submissions) {
-        if (submission.getStudent() == null) continue; // bỏ qua nếu student null
-        if (submission.getAnswerOfSubmissions() == null) submission.setAnswerOfSubmissions(new ArrayList<>());
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        if (user == null) {
+            throw new RuntimeException("người dùng không tồn tại");
+        }
 
-        int total = submission.getAnswerOfSubmissions().size();
-        int correct = (int) submission.getAnswerOfSubmissions().stream()
-                .filter(answer -> answer.isCorrect())
-                .count();
+        Submission submission = submissionRepository.findByAssignmentAndStudent(assignment, user).orElse(null);
+        if (submission == null) {
+            // Trả về DTO rỗng báo rằng user chưa nộp bài
+            return ResponseDetailSubmissionDTO.empty();
+        }
 
-        SubmissionListItemDTO dto = new SubmissionListItemDTO(
-                submission.getStudent().getName(),
-                submission.getStudent().getEmail(),
-                submission.getSubmittedAt(),
-                submission.getGrade(),
-                correct,
-                total
-        );
-
-        result.add(dto);
+        switch (user.getRole()) {
+            case STUDENT:
+                if (!submission.getStudent().getUserId().equals(user.getUserId())) {
+                    throw new RuntimeException("Bạn không có quyền xem bài nộp này");
+                }
+                break;
+            case TEACHER:
+                if (!submission.getAssignment().getCourse().getTeacher().equals(user.getUserId())) {
+                    throw new RuntimeException("Bạn không có quyền xem bài nộp này");
+                }
+                break;
+            default:
+                break;
+        }
+        return ResponseDetailSubmissionDTO.fromSubmission(submission);
     }
 
-    return result;
-}
+    public List<SubmissionListItemDTO> getSubmissionsByAssignment(Long assignmentId) {
+        List<Submission> submissions = submissionRepository.findByAssignmentId(assignmentId);
+        List<SubmissionListItemDTO> result = new ArrayList<>();
+
+        for (Submission submission : submissions) {
+            if (submission.getStudent() == null) continue;
+            if (submission.getAnswerOfSubmissions() == null) submission.setAnswerOfSubmissions(new ArrayList<>());
+
+            int total = submission.getAnswerOfSubmissions().size();
+            int correct = (int) submission.getAnswerOfSubmissions().stream()
+                    .filter(answer -> answer.isCorrect())
+                    .count();
+
+            SubmissionListItemDTO dto = new SubmissionListItemDTO(
+                    submission.getStudent().getName(),
+                    submission.getStudent().getEmail(),
+                    submission.getSubmittedAt(),
+                    submission.getGrade(),
+                    correct,
+                    total
+            );
+            result.add(dto);
+        }
+        return result;
+    }
 }

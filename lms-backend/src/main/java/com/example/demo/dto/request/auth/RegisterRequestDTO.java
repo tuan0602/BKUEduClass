@@ -28,18 +28,12 @@ public class RegisterRequestDTO {
     @NotBlank
     private String name;
 
-    @NotBlank(message = "Role must not be blank")
-    @Pattern(regexp = "STUDENT|ADMIN|TEACHER", message = "Role must be STUDENT or Teacher")
-    private String role;
-
     public User createDTOToUser(){
         User user = new User();
         user.setEmail(this.email);
         user.setPassword(this.password);
         user.setName(this.name);
-
-        // Chuyển String sang Enum trước khi lưu
-        user.setRole(Role.valueOf(this.role));
+        user.setRole(Role.STUDENT);
         return user;
     }
 }

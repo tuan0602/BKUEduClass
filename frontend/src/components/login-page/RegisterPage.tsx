@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { BookOpen, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
-import { useAuth } from '../../context/authContext';
+import { useAuth } from '../../context/AuthContext';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -17,7 +16,6 @@ export function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'STUDENT' as 'STUDENT' | 'TEACHER'
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -48,7 +46,7 @@ export function RegisterPage() {
         formData.name,
         formData.email,
         formData.password,
-        formData.role
+        'STUDENT' // hardcode — chỉ cho phép đăng ký sinh viên
       );
       if (result) {
         setSuccess(true);
@@ -141,25 +139,8 @@ export function RegisterPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Vai trò</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value: 'STUDENT' | 'TEACHER') => setFormData({ ...formData, role: value })}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="bg-input-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="STUDENT">Sinh viên</SelectItem>
-                  <SelectItem value="TEACHER">Giảng viên</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-primary hover:bg-primary/90"
               disabled={isLoading}
             >
@@ -170,8 +151,8 @@ export function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Đã có tài khoản?{' '}
-              <button 
-                onClick={() => navigate('/login')} 
+              <button
+                onClick={() => navigate('/login')}
                 className="text-primary hover:underline"
                 disabled={isLoading}
               >
