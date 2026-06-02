@@ -1,12 +1,13 @@
-package com.example.demo.domain;
+package com.example.demo.entity;
 
-import com.example.demo.domain.enumeration.Answer;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+
+import com.example.demo.entity.enumeration.Answer;
 
 @Entity
 @Table(name = "answer_of_submission")

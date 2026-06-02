@@ -1,14 +1,15 @@
-package com.example.demo.domain;
+package com.example.demo.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.example.demo.domain.Discussion;
-import com.example.demo.domain.User;
 
 import java.time.LocalDateTime;
+
+import com.example.demo.entity.Discussion;
+import com.example.demo.entity.User;
 
 @Entity
 @Table(name = "DiscussionReply")

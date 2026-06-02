@@ -1,6 +1,6 @@
-package com.example.demo.domain;
+package com.example.demo.entity;
 
-import com.example.demo.domain.enumeration.Answer;
+import com.example.demo.entity.enumeration.Answer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;

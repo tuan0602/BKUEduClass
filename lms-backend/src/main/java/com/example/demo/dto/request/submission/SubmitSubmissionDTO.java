@@ -1,12 +1,13 @@
 package com.example.demo.dto.request.submission;
 
-import com.example.demo.domain.enumeration.Answer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
+
+import com.example.demo.entity.enumeration.Answer;
 
 @Getter
 @Setter

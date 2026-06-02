@@ -1,12 +1,12 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.Course;
-import com.example.demo.domain.CourseEnrollment;
-import com.example.demo.domain.User;
-import com.example.demo.domain.enumeration.EnrollmentStatus;
-import com.example.demo.domain.enumeration.Role;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.dto.response.userDTO.ResUserDTO;
+import com.example.demo.entity.Course;
+import com.example.demo.entity.CourseEnrollment;
+import com.example.demo.entity.User;
+import com.example.demo.entity.enumeration.EnrollmentStatus;
+import com.example.demo.entity.enumeration.Role;
 import com.example.demo.repository.CourseEnrollmentRepository;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.UserRepository;
@@ -40,12 +40,12 @@ public class EnrolmentService {
         CourseEnrollment enrollment=new CourseEnrollment();
         enrollment.setCourse(course);
         enrollment.setStudent(student);
-        enrollment.setStatus(com.example.demo.domain.enumeration.EnrollmentStatus.PENDING);
+        enrollment.setStatus(com.example.demo.entity.enumeration.EnrollmentStatus.PENDING);
         courseEnrollmentRepository.save(enrollment);
     }
     public void enrollAnswer(String answer, Long enrollmentId) {
         CourseEnrollment enrollment=courseEnrollmentRepository.findById(enrollmentId).orElseThrow(()-> new RuntimeException("Enrollment not found"));
-        if(enrollment.getStatus()!= com.example.demo.domain.enumeration.EnrollmentStatus.PENDING){
+        if(enrollment.getStatus()!= com.example.demo.entity.enumeration.EnrollmentStatus.PENDING){
             throw new RuntimeException("Enrollment is not in pending status");
         }
         // Here we can add logic to check the answer if needed
@@ -54,7 +54,7 @@ public class EnrolmentService {
             courseEnrollmentRepository.save(enrollment);
             return;
         }
-        enrollment.setStatus(com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+        enrollment.setStatus(com.example.demo.entity.enumeration.EnrollmentStatus.ACCEPTED);
         courseEnrollmentRepository.save(enrollment);
     }
     public ResultPaginationDTO getEnrolls(Pageable pageable,String courseName,String courseCode,String studentName,EnrollmentStatus status,String userMail) {

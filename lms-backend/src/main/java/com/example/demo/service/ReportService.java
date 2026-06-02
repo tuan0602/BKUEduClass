@@ -1,10 +1,10 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.*;
-import com.example.demo.domain.enumeration.EnrollmentStatus;
-import com.example.demo.domain.enumeration.Role;
 import com.example.demo.dto.response.courseDTO.ResponseCourseDTO;
 import com.example.demo.dto.response.report.ProgressLearning;
+import com.example.demo.entity.*;
+import com.example.demo.entity.enumeration.EnrollmentStatus;
+import com.example.demo.entity.enumeration.Role;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.SubmissionRepository;
 import com.example.demo.repository.UserRepository;

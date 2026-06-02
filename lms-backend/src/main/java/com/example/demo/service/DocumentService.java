@@ -1,8 +1,8 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.Course;
-import com.example.demo.domain.Document;
-import com.example.demo.domain.User;
+import com.example.demo.entity.Course;
+import com.example.demo.entity.Document;
+import com.example.demo.entity.User;
 import com.example.demo.repository.CourseEnrollmentRepository;
 import com.example.demo.repository.CourseRepository;
 import com.example.demo.repository.DocumentRepository;
@@ -66,7 +66,7 @@ public class DocumentService {
         switch (user.getRole()) {
             case STUDENT:
                 boolean isEnrolled = courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,
-                        document.getCourse(), com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+                        document.getCourse(), com.example.demo.entity.enumeration.EnrollmentStatus.ACCEPTED);
                 if (!isEnrolled) {
                     throw new RuntimeException("User not enrolled in course");
                 }
@@ -94,7 +94,7 @@ public class DocumentService {
         switch (user.getRole()) {
             case STUDENT:
                 boolean isEnrolled = courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user, course,
-                        com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+                        com.example.demo.entity.enumeration.EnrollmentStatus.ACCEPTED);
                 if (!isEnrolled) {
                     throw new RuntimeException("User not enrolled in course");
                 }
@@ -119,7 +119,7 @@ public class DocumentService {
         switch (user.getRole()) {
             case STUDENT:
                 boolean isEnrolled = courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,
-                        document.getCourse(), com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+                        document.getCourse(), com.example.demo.entity.enumeration.EnrollmentStatus.ACCEPTED);
                 if (!isEnrolled) {
                     throw new RuntimeException("User not enrolled in course");
                 }

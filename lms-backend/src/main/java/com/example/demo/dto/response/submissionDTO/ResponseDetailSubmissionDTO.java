@@ -1,7 +1,5 @@
 package com.example.demo.dto.response.submissionDTO;
 
-import com.example.demo.domain.Submission;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,6 +8,8 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.example.demo.entity.Submission;
 
 @Getter
 @Setter

@@ -1,13 +1,13 @@
 package com.example.demo.controller;
 
-import com.example.demo.domain.Document;
-import com.example.demo.domain.enumeration.Role;
 import com.example.demo.dto.request.user.ChangeUserInfoRequest;
 import com.example.demo.dto.request.user.CreateUserRequest;
 import com.example.demo.dto.request.user.UpdateUserRequest;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.dto.response.userDTO.ResUserDTO;
+import com.example.demo.entity.Document;
+import com.example.demo.entity.enumeration.Role;
 import com.example.demo.service.UserService;
 import com.example.demo.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,6 +1,7 @@
 package com.example.demo.dto.request.course;
 
-import com.example.demo.domain.Course;
+import com.example.demo.entity.Course;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

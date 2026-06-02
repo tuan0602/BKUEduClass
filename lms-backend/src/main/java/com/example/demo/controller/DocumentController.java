@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.demo.domain.Document;
 import com.example.demo.dto.response.ApiResponse;
+import com.example.demo.entity.Document;
 import com.example.demo.service.DocumentService;
 import com.example.demo.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;

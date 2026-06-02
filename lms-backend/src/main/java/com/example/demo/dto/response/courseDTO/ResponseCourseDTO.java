@@ -1,9 +1,10 @@
 package com.example.demo.dto.response.courseDTO;
 
 
-import com.example.demo.domain.Course;
-import com.example.demo.domain.enumeration.EnrollmentStatus;
 import com.example.demo.dto.response.userDTO.ResUserDTO;
+import com.example.demo.entity.Course;
+import com.example.demo.entity.enumeration.EnrollmentStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,12 +1,13 @@
 package com.example.demo.repository;
 
-import com.example.demo.domain.Course;
-import com.example.demo.domain.CourseEnrollment;
-import com.example.demo.domain.User;
-import com.example.demo.domain.enumeration.EnrollmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
+
+import com.example.demo.entity.Course;
+import com.example.demo.entity.CourseEnrollment;
+import com.example.demo.entity.User;
+import com.example.demo.entity.enumeration.EnrollmentStatus;
 
 import java.util.Optional;
 

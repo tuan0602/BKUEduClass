@@ -1,11 +1,11 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.*;
-import com.example.demo.domain.enumeration.EnrollmentStatus;
-import com.example.demo.domain.enumeration.StatusAssignment;
 import com.example.demo.dto.request.submission.SubmitSubmissionDTO;
 import com.example.demo.dto.response.submissionDTO.ResponseDetailSubmissionDTO;
 import com.example.demo.dto.response.submissionDTO.SubmissionListItemDTO;
+import com.example.demo.entity.*;
+import com.example.demo.entity.enumeration.EnrollmentStatus;
+import com.example.demo.entity.enumeration.StatusAssignment;
 import com.example.demo.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

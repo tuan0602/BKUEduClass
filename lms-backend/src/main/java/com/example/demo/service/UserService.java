@@ -1,14 +1,13 @@
  package com.example.demo.service;
 
- import com.example.demo.domain.Document;
- import com.example.demo.domain.User;
- import com.example.demo.domain.enumeration.Role;
  import com.example.demo.dto.request.user.CreateUserRequest;
  import com.example.demo.dto.request.user.UpdateUserRequest;
  import com.example.demo.dto.response.ResultPaginationDTO;
  import com.example.demo.dto.response.userDTO.ResUserDTO;
-
- import com.example.demo.repository.UserRepository;
+import com.example.demo.entity.Document;
+import com.example.demo.entity.User;
+import com.example.demo.entity.enumeration.Role;
+import com.example.demo.repository.UserRepository;
  import com.example.demo.util.errors.CustomException;
  import com.example.demo.util.errors.DuplicateResourceException;
  import com.example.demo.util.errors.ResourceNotFoundException;
@@ -76,7 +75,7 @@
          mt.setCurrentPage(page.getNumber());
          mt.setPageSize(page.getSize());
          mt.setTotalPages(page.getTotalPages());
-         mt.setTotalElements(page.getNumberOfElements());
+         mt.setTotalElements((int) page.getTotalElements());
 
          resultPaginationDTO.setMeta(mt);
          resultPaginationDTO.setResult(result);

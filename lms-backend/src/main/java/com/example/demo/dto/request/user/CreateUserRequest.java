@@ -1,6 +1,7 @@
 package com.example.demo.dto.request.user;
 
-import com.example.demo.domain.enumeration.Role;
+import com.example.demo.entity.enumeration.Role;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -3,7 +3,8 @@ import axios from "axios";
 import { toast } from "sonner";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/api", 
+  // Ưu tiên dùng biến môi trường khi deploy, nếu không có thì dùng localhost
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api", 
   withCredentials: true, 
 });
 

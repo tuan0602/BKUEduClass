@@ -1,5 +1,6 @@
 package com.example.demo.dto.request.assignment;
-import com.example.demo.domain.enumeration.Answer;
+import com.example.demo.entity.enumeration.Answer;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

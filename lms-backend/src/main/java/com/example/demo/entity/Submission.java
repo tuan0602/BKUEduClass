@@ -1,12 +1,12 @@
-package com.example.demo.domain;
+package com.example.demo.entity;
 
+import com.example.demo.entity.Assignment;
+import com.example.demo.entity.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.example.demo.domain.Assignment;
-import com.example.demo.domain.User;
 
 import java.time.LocalDateTime;
 import java.util.List;

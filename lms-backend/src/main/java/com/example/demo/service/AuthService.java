@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.User;
+import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.util.errors.CustomException;
 import lombok.RequiredArgsConstructor;

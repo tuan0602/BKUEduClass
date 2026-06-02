@@ -1,9 +1,9 @@
 package com.example.demo.controller;
 
-import com.example.demo.domain.Assignment;
 import com.example.demo.dto.request.assignment.CreateAssignmentDTO;
 import com.example.demo.dto.response.ApiResponse;
 import com.example.demo.dto.response.assignmentDTO.ResponseAssignmentForStudentDTO;
+import com.example.demo.entity.Assignment;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.service.AssignmentService;
 import com.example.demo.util.SecurityUtil;

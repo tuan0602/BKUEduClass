@@ -1,7 +1,8 @@
 package com.example.demo.dto.request.auth;
 
-import com.example.demo.domain.User;
-import com.example.demo.domain.enumeration.Role;
+import com.example.demo.entity.User;
+import com.example.demo.entity.enumeration.Role;
+
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Email;

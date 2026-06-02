@@ -1,7 +1,7 @@
 package com.example.demo.dto.response;
 
 
-import com.example.demo.domain.enumeration.Role;
+import com.example.demo.entity.enumeration.Role;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

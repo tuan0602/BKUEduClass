@@ -1,13 +1,14 @@
 package com.example.demo.dto.response.assignmentDTO;
 
-import com.example.demo.domain.Assignment;
-import com.example.demo.domain.enumeration.StatusAssignment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+
+import com.example.demo.entity.Assignment;
+import com.example.demo.entity.enumeration.StatusAssignment;
 
 @Getter
 @Setter

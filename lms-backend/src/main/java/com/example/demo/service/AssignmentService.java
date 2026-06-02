@@ -1,9 +1,9 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.*;
-import com.example.demo.domain.enumeration.StatusAssignment;
 import com.example.demo.dto.request.assignment.CreateAssignmentDTO;
 import com.example.demo.dto.response.assignmentDTO.ResponseAssignmentForStudentDTO;
+import com.example.demo.entity.*;
+import com.example.demo.entity.enumeration.StatusAssignment;
 import com.example.demo.dto.response.ResultPaginationDTO;
 import com.example.demo.dto.response.assignmentDTO.ResponseAssignmentDTO;
 import com.example.demo.repository.*;
@@ -93,7 +93,7 @@ public class AssignmentService {
         }
         switch (user.getRole()){
             case STUDENT:
-                boolean isEnrolled=courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,course, com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+                boolean isEnrolled=courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,course, com.example.demo.entity.enumeration.EnrollmentStatus.ACCEPTED);
                 if(!isEnrolled){
                     throw new RuntimeException("User not enrolled in course");
                 }
@@ -129,7 +129,7 @@ public class AssignmentService {
         mt.setCurrentPage(page.getNumber());
         mt.setPageSize(page.getSize());
         mt.setTotalPages(page.getTotalPages());
-        mt.setTotalElements(page.getNumberOfElements());
+        mt.setTotalElements((int) page.getTotalElements());
 
         resultPaginationDTO.setMeta(mt);
         resultPaginationDTO.setResult(result);
@@ -149,7 +149,7 @@ public class AssignmentService {
             if (assignment.getStatus() != StatusAssignment.PUBLISHED){
                 throw new ResourceNotFoundException("Assignment not Published");
             }
-            boolean isEnrolled=courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,assignment.getCourse(), com.example.demo.domain.enumeration.EnrollmentStatus.ACCEPTED);
+            boolean isEnrolled=courseEnrollmentRepository.existsByStudentAndCourseAndStatus(user,assignment.getCourse(), com.example.demo.entity.enumeration.EnrollmentStatus.ACCEPTED);
             if(!isEnrolled){
                 throw new RuntimeException("User not enrolled in course");
             }

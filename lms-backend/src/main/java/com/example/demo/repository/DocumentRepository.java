@@ -1,11 +1,12 @@
 package com.example.demo.repository;
 
 
-import com.example.demo.domain.Course;
-import com.example.demo.domain.Document;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
+
+import com.example.demo.entity.Course;
+import com.example.demo.entity.Document;
 
 import java.util.List;
 
