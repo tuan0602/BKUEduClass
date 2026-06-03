@@ -6,7 +6,7 @@ import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { BookOpen, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
-import { useAuth } from '../../context/authContext';
+import { useAuth } from '../../context/AuthContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
