@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
@@ -46,7 +47,7 @@ public class CourseService {
         course.setTeacher(user);
         return courseRepository.save(course);
     }
-
+    @Transactional
     public ResultPaginationDTO getCourses(Pageable pageable, String nameCourse, String teacherName, String courseCode, String userMail) {
         User user = userRepository.findByEmail(userMail).orElse(null);
         Specification<Course> spec = (root, query, cb) -> {
@@ -97,7 +98,8 @@ public class CourseService {
         resultPaginationDTO.setResult(result);
         return resultPaginationDTO;
     }
-
+    
+    @Transactional
     public ResponseDetailCourseDTO getCoursesDetail(Long courseId, String userMail) {
         User user = userRepository.findByEmail(userMail).orElse(null);
         Course course = courseRepository.findById(courseId).orElse(null);
