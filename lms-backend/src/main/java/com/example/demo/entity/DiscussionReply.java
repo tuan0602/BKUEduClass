@@ -12,7 +12,7 @@ import com.example.demo.entity.Discussion;
 import com.example.demo.entity.User;
 
 @Entity
-@Table(name = "DiscussionReply")
+@Table(name = "discussion_replies")
 @Getter
 @Setter
 @NoArgsConstructor

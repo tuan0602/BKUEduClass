@@ -12,7 +12,7 @@ import com.example.demo.entity.Course;
 import com.example.demo.entity.User;
 
 @Entity
-@Table(name = "Discussion")
+@Table(name = "discussions")
 @Getter
 @Setter
 @NoArgsConstructor

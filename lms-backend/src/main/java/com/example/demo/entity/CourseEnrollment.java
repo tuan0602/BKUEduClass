@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import com.example.demo.entity.enumeration.EnrollmentStatus;
 
 @Entity
-@Table(name = "CourseEnrollment")
+@Table(name = "course_enrollments")
 @Getter
 @Setter
 @NoArgsConstructor
