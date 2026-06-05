@@ -5,6 +5,20 @@ Hệ thống quản lý lớp học trực tuyến (LMS) hỗ trợ 3 vai trò A
 - **Backend:** Spring Boot 3 (Java 17, Maven)
 - **Frontend:** React 18 + Vite (TypeScript)
 
+## 🚀 Live Demo & Tài Khoản Test
+
+- **Website chính thức:** [https://bku-edu-class.vercel.app](https://bku-edu-class.vercel.app/) 
+- **Tài liệu API (Swagger):** [https://bkueduclass-production.up.railway.app/swagger-ui/index.html](https://bkueduclass-production.up.railway.app/swagger-ui/index.html)
+
+**Tài khoản dùng thử:**
+
+| Role    | Email                   | Password |
+|---------|-------------------------|----------|
+| Admin   | admin@gmail.com         | admin@123|
+| Teacher | minhquan@gmail.com      | 123456   |
+| Student | anhtuan060201@gmail.com | 123456   |
+
+> **Ghi chú:** Người dùng mới có thể tự Đăng ký (mặc định role STUDENT). Tài khoản TEACHER/ADMIN do Admin cấp quyền.
 ---
 
 ## Tính năng chính
@@ -34,11 +48,12 @@ Hệ thống quản lý lớp học trực tuyến (LMS) hỗ trợ 3 vai trò A
 
 ---
 
-## Tổng quan nhanh
+## 💻 Chạy thử dưới máy (Local Development)
 
+Dành cho các developer muốn clone code về phát triển thêm:
 - Frontend: http://localhost:3000
 - Backend: http://localhost:8080
-- Swagger UI: http://localhost:8080/swagger-ui/index.html
+- Swagger UI (Local): http://localhost:8080/swagger-ui/index.html
 
 > **Lưu ý:** Frontend có file `src/lib/axios.ts` cấu hình `baseURL: "http://localhost:8080/api"` — nếu backend chạy ở port khác, hãy cập nhật file này.
 
@@ -48,9 +63,9 @@ Hệ thống quản lý lớp học trực tuyến (LMS) hỗ trợ 3 vai trò A
 
 | Role    | Email               | Password |
 |---------|---------------------|----------|
-| Admin   | msphuong@gmail.com     | 123456   |
-| Teacher | ltphuong@gmail.com   | 123456   |
-| Student | minhnguyenvan@gmail.com  | 123456   |
+| Admin   | admin@gmail.com     | admin@123|
+| Teacher | anhtuan060201@gmail.com  | 123456   |
+| Student | minhquan@gmail.com  | 123456   |
 
 > Tạo tài khoản mới qua `POST /api/auth/register` (mặc định role STUDENT).  
 > Tài khoản TEACHER/ADMIN do Admin tạo qua giao diện quản lý.
